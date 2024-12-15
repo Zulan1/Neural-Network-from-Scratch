@@ -19,43 +19,43 @@ class Layer: #Dvir
         self._grad_w = None
         self.W = w_init if w_init else np.random.rand(input_len, output_len) # might need to allow different randomization
 
-    def forward(self, X):
+    def forward(self, X : np.ndarray):
         """Forward pass of the layer
         Args:
             X (np.ndarray): input of the layer
         """
         out = self.activation(self.W, X)
-        self.Z = out
+        self.Z = out # save the output for the backward pass
         return out
 
-    def backward(self, X, V, C = None):
+    def backward(self, X : np.ndarray, V : np.ndarray, C : np.ndarray= None):
         """Backward pass of the layer
         Args:
             X (np.ndarray): input of the layer
             V (np.ndarray): accumulated gradient from the next layer
+            C (np.ndarray): target values for the last layer
         """
         print(f"{X.shape=}, {V.shape=}, {self.W.shape=}, {self.Z.shape=}")
-        if C is None:
-            activation_grad_x = self.activation.grad_x(X, self.W, self.Z)
-            activation_grad_w = self.activation.grad_w(X, self.W, self.Z)
+        if C is not None:
+            grad_x = self.activation.grad_X(X, self.W, self.Z, C) # (n, m)
+            grad_w = self.activation.grad_W(X, self.W, self.Z, C) # (n, k)
         else:
-            activation_grad_x = self.activation.grad_x(X, self.W, self.Z, C)
-            activation_grad_w = self.activation.grad_w(X, self.W, self.Z, C)
-        print(f"{activation_grad_x.shape=}")
-        print(f"{activation_grad_w.shape=}")
+            activation_grad_x = self.activation.grad_X(X, self.W, self.Z) # (n, m)
+            activation_grad_w = self.activation.grad_W(X, self.W, self.Z) # (n, k)
+            print(f"{activation_grad_x.shape=}")
+            print(f"{activation_grad_w.shape=}")
 
-        grad_mul_V_x = activation_grad_x * V
-        print(f"{grad_mul_V_x.shape=}")
+            grad_mul_V_x = activation_grad_x * V # (n, m)
+            print(f"{grad_mul_V_x.shape=}")
 
-        grad_x = np.dot(grad_mul_V_x, self.W.T)
-        print(f"{grad_x.shape=}")
+            grad_x = np.dot(grad_mul_V_x, self.W.T) 
+            print(f"{grad_x.shape=}")
 
+            grad_mul_V_w = activation_grad_w * V
+            print(f"{grad_mul_V_w.shape=}")
 
-        grad_mul_V_w = activation_grad_w * V
-        print(f"{grad_mul_V_w.shape=}")
-
-        grad_w = np.dot(X.T, grad_mul_V_w)
-        print(f"{grad_w.shape=}")
+            grad_w = np.dot(X.T, grad_mul_V_w)
+            print(f"{grad_w.shape=}")
         # else:
         #     print(f"{C.shape=}")
         #     m = self.Z.shape[0]
@@ -94,14 +94,39 @@ class Layer: #Dvir
 
 class ResNetLayer(Layer):
 
-    def __init__():
-        pass
+    def __init__(self, input_len, output_len, activation : Activation, w_init = None): #, batch_size = None):
+        super().__init__(input_len, output_len, activation, w_init)
+        # self.batch_size = batch_size
+        self.W2 = w_init if w_init else np.random.rand(input_len, output_len) # might need to allow different randomization
+        self.grad_w2 = None
 
-    def __forward__():
-        pass
+    def forward(self, X: np.ndarray):
+        out =  self.W2 @ self.activation(self.W, X).T + X # X is of shape (n, m) and W2 is of shape (n, k), W1 of shape (n, k), activation shape (m, k) ,the output is of shape (n, m)
+        self.Z = out
+        return out
 
-    def __backward__():
-        pass
+    def backward(self, X : np.ndarray, V : np.ndarray, C : np.ndarray= None):
+        n, m = X.shape
+        # V shape is (n, m)
+        if C is None:
+            activation_grad_x = self.activation.grad_X(X, self.W, self.Z) # (n, m)
+            activation_grad_w = self.activation.grad_W(X, self.W, self.Z) # (n, k)
+        else:
+            activation_grad_x = self.activation.grad_X(X, self.W, self.Z, C) # (n, m)
+            activation_grad_w = self.activation.grad_W(X, self.W, self.Z, C) # (n, k)
+
+        grad_mul_V_x = activation_grad_x * V # 
+        
+        grad_x = self.W2 @ np.dot(grad_mul_V_x, self.W.T) #
+        
+        grad_mul_V_w = activation_grad_w * V
+        
+        grad_w = self.W2 @ np.dot(X.T, grad_mul_V_w)
+    
+
+            
+        
+        
 
 
 if __name__ == "__main__":

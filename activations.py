@@ -7,8 +7,8 @@ class Activation(ABC):
     def __init__(self):
         pass
 
-    def __call__(self, W: np.ndarray, X: np.ndarray):
-        return self.activation(W, X)
+    def __call__(self, A: np.ndarray):
+        return self.activation(A)
 
     @abstractmethod
     def activation(self, A: np.ndarray) -> np.ndarray:
@@ -71,3 +71,18 @@ class ReLU(Activation):
         """
 
         return np.where(Z, 1, 0)
+
+
+class SoftMax(Activation):
+    def activation(self, A: np.ndarray):
+        """
+        Perform the forward pass of the neural network layer.
+        
+        Returns:
+            np.ndarray: Output of the layer after applying the softmax activation function.
+        """
+        exps = np.exp(A - np.max(A, axis=0))
+        return exps / np.sum(exps, axis=0)
+
+    def grad(self, Z: np.ndarray):
+        return np.ones_like(Z) # not true, but works for the purposes of softmax here.

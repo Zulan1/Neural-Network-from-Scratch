@@ -52,6 +52,8 @@ def train(model: NeuralNetwork, epochs: int, lr: float = 1e-3,
 
 if __name__ == "__main__":
     L = 3
+    lr = 1e-3
+    epochs = 100
 
 
     X_train, X_test, X_val = np.array([[0, 0], [0, 1], [1, 0], [1, 1]]).T
@@ -63,3 +65,5 @@ if __name__ == "__main__":
         model.add_layer(Layer(2, 2, ReLU()))
     model.add_layer(Layer(2, 1, SoftMax()))
     loss_fn = CrossEntropy()
+    
+    train(model, epochs, lr, loss_fn, X_train, C)

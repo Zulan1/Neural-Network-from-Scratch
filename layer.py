@@ -4,67 +4,48 @@ from tensor import Tensor
 
 class Layer:
     """Layer class for neural network"""
-    def __init__(self, input_len : int, output_len : int, activation : Activation, w_init : np.ndarray = None):
+    def __init__(self,
+                 in_shape: int, 
+                 out_shape: int, 
+                 activation: Activation, 
+                 w_init: np.ndarray = None):
         """Initialize the layer
         Args:
-            input_len (int): input length of the layer
-            output_len (int): output length of the layer
+            in_shape (int): input length of the layer
+            out_shape (int): output length of the layer
             activation (Activation): activation function of the layer
             w_init (np.ndarray): initial weights of the layer
             solver (Solver): solver for the layer
         """
         self.activation = activation
+        self.layers = [self]
+        self.W: Tensor = w_init if w_init else Tensor(np.random.randn(in_shape + 1, out_shape) * 0.01)
         self.Z = None
-        self.W : Tensor = w_init if w_init else np.random.randn(input_len, output_len)
-        # self._grad_x = None
-        # self._grad_w = None
-        # self.A = None
 
-    def forward(self, X : np.ndarray):
+    def forward(self, X: np.ndarray) -> np.ndarray:
         """Forward pass of the layer
         Args:
             X (np.ndarray): input of the layer
         """
-        self.Z = self.activation(self.W @ X)
+        m = X.shape[1]
+        X = np.concatenate((X, np.ones((1, m))), axis=0)
+        self.Z = self.activation(self.W.T @ X)
         return self.Z
 
-    def __call__(self, X):
+    def __call__(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)
 
-
-class SoftMaxLayer(Layer):
-    pass
-
 class ResNetLayer(Layer):
-
-    def __init__(self, input_len, output_len, activation : Activation, w_init = None): #, batch_size = None):
-        super().__init__(input_len, output_len, activation, w_init)
-        # self.batch_size = batch_size
-        self.W2 = w_init if w_init else np.random.rand(input_len, output_len) # might need to allow different randomization
+    def __init__(self, in_shape, out_shape, activation: Activation, w_init = None): #, batch_size = None):
+        super().__init__(in_shape, out_shape, activation, w_init=None)
+        self.W2 = w_init if w_init else np.random.rand(in_shape, out_shape) # might need to allow different randomization
         self.grad_w2 = None
 
     def forward(self, X: np.ndarray):
         out =  self.W2 @ self.activation(self.W, X).T + X # X is of shape (n, m) and W2 is of shape (n, k), W1 of shape (n, k), activation shape (m, k) ,the output is of shape (n, m)
         self.Z = out
         return out
-
-    def backward(self, X : np.ndarray, V : np.ndarray, C : np.ndarray= None):
-        n, m = X.shape
-        # V shape is (n, m)
-        if C is None:
-            activation_grad_x = self.activation.grad_X(X, self.W, self.Z) # (n, m)
-            activation_grad_w = self.activation.grad_W(X, self.W, self.Z) # (n, k)
-        else:
-            activation_grad_x = self.activation.grad_X(X, self.W, self.Z, C) # (n, m)
-            activation_grad_w = self.activation.grad_W(X, self.W, self.Z, C) # (n, k)
-
-        grad_mul_V_x = activation_grad_x * V # 
         
-        grad_x = self.W2 @ np.dot(grad_mul_V_x, self.W.T) #
-        
-        grad_mul_V_w = activation_grad_w * V
-        
-        grad_w = self.W2 @ np.dot(X.T, grad_mul_V_w)
 
 if __name__ == "__main__":
     pass

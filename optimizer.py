@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class Optimizer(ABC):
-    @abstractmethod
     def __init__(self, lr: float):
         self.lr = lr
 
@@ -16,6 +15,7 @@ class Optimizer(ABC):
 
 class SGD(Optimizer):
     def update(self, W):
+        assert W.grad is not None, "Didn't find a gradient, did you forget to call loss.backward()?"       
         return W - self.lr * W.grad
 
 class SGD_momentum(Optimizer):
@@ -24,6 +24,7 @@ class SGD_momentum(Optimizer):
         self.beta = beta
 
     def update(self, W):
+        assert W.grad is not None, "Didn't find a gradient, did you forget to call loss.backward()?"       
         grad = W.grad + self.beta * W.prev_grad
         return W - self.lr * grad
 

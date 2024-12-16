@@ -1,6 +1,7 @@
 from typing import List
 import numpy as np
-from layer import Layer
+from layer import Layer, ResNetLayer
+from activations import Tanh, ReLU, SoftMax
 
 class NeuralNetwork():
     """
@@ -24,17 +25,40 @@ class NeuralNetwork():
     def __init__(self):
         self.layers : List[Layer] = []
 
-    def forward(self, X : np.ndarray):
+    def forward(self, X: np.ndarray) -> np.ndarray:
         out = X
         for layer in self.layers:
-            out = np.concatenate((out, np.ones((1, out.shape[1]))), axis=0)
             out = layer(out)
         return out
 
     def __call__(self, X):
-        self.forward(X)
+        return self.forward(X)
 
-    def add_layer(self, layer):
+    def add_layer(
+        self, 
+        in_shape: int, 
+        out_shape: int, 
+        activation_type: str, 
+        type: str = 'Linear'
+    ) -> None:
+        assert activation_type.lower() in ['tanh', 'relu', 'softmax'], "Activation function not supported"
+        assert not self.layers or self.layers[-1].W.shape[1] == in_shape, \
+        f"Input shape mismatch at layer {len(self.layers) + 1}," \
+        f"expected {self.layers[-1].W.shape[1]} but got {in_shape}"
+
+        match activation_type.lower():
+            case 'tanh':
+                activation = Tanh()
+            case 'relu':
+                activation = ReLU()
+            case 'softmax':
+                activation = SoftMax()
+            case _:
+                raise ValueError("Activation function not supported")
+        if type == 'Linear':
+            layer = Layer(in_shape, out_shape, activation)
+        else:
+            layer = ResNetLayer(in_shape, out_shape, activation)
         self.layers.append(layer)
 
 

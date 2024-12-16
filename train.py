@@ -1,11 +1,15 @@
 import numpy as np
+
+from tqdm import tqdm
+
 from nn import NeuralNetwork
 from layer import Layer, ResNetLayer
 from loss import Loss, CrossEntropy
-from optimizer import Optimizer, SGD, SGD_momentum
-from activations import Activation, ReLU, Tanh, SoftMax
+from optimizer import Optimizer, SGD
+from activations import ReLU, SoftMax
 
-def train_epoch(model: NeuralNetwork, lr: float, optimizer: Optimizer, loss_fn: Loss, Xs: np.ndarray, Cs: np.ndarray):
+def train_epoch(model: NeuralNetwork, optimizer: Optimizer, loss_fn: Loss, 
+                X: np.ndarray, C: np.ndarray, batch_size: int):
     """
     Train the model for one epoch.
 
@@ -18,22 +22,28 @@ def train_epoch(model: NeuralNetwork, lr: float, optimizer: Optimizer, loss_fn: 
         C (np.ndarray): The target data.
     """
     running_avg_loss = 0
-    for X, C in zip(Xs, Cs):
+    m = X.shape[1]
+    num_batches = max(m // batch_size, 1)
+    Xs = np.array_split(X, num_batches, axis=1)
+    Cs = np.array_split(C, num_batches, axis=1)
+    for X_batch, C_batch in zip(Xs, Cs):
         # Forward pass
-        out = model(X)
-        loss = loss_fn(out, C)
+        out = model(X_batch)
+
         # Backward pass
-        loss.backward(model, C, X)
+        loss = loss_fn(out, C_batch)
+        loss_fn.backward(model, X_batch, C_batch)
+
 
         # Update weights
         optimizer.step(model)
-        running_avg_loss += loss / (len(Xs) * Xs.shape[2]) # M/m * m
+        running_avg_loss += loss / m
 
     return running_avg_loss
 
-def train(model: NeuralNetwork, epochs: int, lr: float = 1e-3,
-          loss_fn: Loss = None,
-          Xs: np.ndarray = None, Cs: np.ndarray = None):
+def train(model: NeuralNetwork, epochs: int, batch_size: int,
+          loss_fn: Loss = CrossEntropy(), optimizer: Optimizer = SGD(1e-3),
+          X: np.ndarray = None, C: np.ndarray = None):
     """
     Train the model using the given optimizer.
 
@@ -43,12 +53,13 @@ def train(model: NeuralNetwork, epochs: int, lr: float = 1e-3,
         lr (float): The learning rate for the optimizer.
         optimizer (Optimizer): The optimizer to use for training.
     """
-    optimizer = SGD(lr)
-    for epoch in range(epochs):
+    losses = []
+    for _ in tqdm(range(epochs), desc="Training"):
         # Forward pass
-        loss = train_epoch(model, lr, optimizer, loss_fn, Xs, Cs)
-        print(f"Epoch {epoch} - Loss: {loss}")
+        loss = train_epoch(model, optimizer, loss_fn, X, C, batch_size)
+        losses.append(loss)
 
+    return losses
 
 if __name__ == "__main__":
     L = 3
@@ -65,5 +76,6 @@ if __name__ == "__main__":
         model.add_layer(Layer(2, 2, ReLU()))
     model.add_layer(Layer(2, 1, SoftMax()))
     loss_fn = CrossEntropy()
+    
     
     train(model, epochs, lr, loss_fn, X_train, C)

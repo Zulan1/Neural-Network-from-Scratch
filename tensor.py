@@ -1,10 +1,10 @@
 import numpy as np
 
 class Tensor(np.ndarray):
-    def __new__(cls, input_array, requires_grad=False):
+    def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls)
         obj._grad = None
-        obj._prev_grad = None
+        obj._prev_grad = np.zeros_like(obj)
         return obj
 
     def __array_finalize__(self, obj):
@@ -19,7 +19,8 @@ class Tensor(np.ndarray):
 
     @grad.setter
     def grad(self, value):
-        self._prev_grad = self._grad
+        if self._grad is not None:
+            self._prev_grad = self._grad
         self._grad = value
 
     @property

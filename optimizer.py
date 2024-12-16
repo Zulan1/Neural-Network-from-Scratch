@@ -1,6 +1,8 @@
+from abc import ABC, abstractmethod
 import numpy as np
 
-class Optimizer:
+class Optimizer(ABC):
+    @abstractmethod
     def __init__(self, lr: float):
         self.lr = lr
 
@@ -8,18 +10,19 @@ class Optimizer:
         for layer in model.layers:
             layer.W = self.update(layer.W)
 
+    @abstractmethod
     def update(self, W: np.ndarray) -> np.ndarray:
         pass
 
 class SGD(Optimizer):
-    def __init__(self, lr: float, beta: float):
-        super().__init__(lr)
-        self.beta = beta
-
     def update(self, W):
         return W - self.lr * W.grad
 
 class SGD_momentum(Optimizer):
+    def __init__(self, lr: float, beta: float):
+        super().__init__(lr)
+        self.beta = beta
+
     def update(self, W):
         grad = W.grad + self.beta * W.prev_grad
         return W - self.lr * grad

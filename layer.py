@@ -30,15 +30,6 @@ class Layer:
     def __call__(self, X):
         return self.forward(X)
 
-    @property
-    def weights(self):
-        """Return the weights of the layer"""
-        return self.W
-
-    def update_weights(self, new_W):
-        """Update the weights of the layer"""
-        self.W = new_W
-
 
 class SoftMaxLayer(Layer):
     pass

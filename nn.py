@@ -29,9 +29,6 @@ class NeuralNetwork(): #todo Dvir
 
     def __call__(self, X):
         self.forward(X)
-
-    def backward(self,):
-        pass
     
     def add_layer(self, layer):
         self.layers.append(layer)

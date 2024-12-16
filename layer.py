@@ -1,5 +1,6 @@
 import numpy as np
 from activations import Activation
+from tensor import Tensor
 
 class Layer:
     """Layer class for neural network"""
@@ -14,7 +15,7 @@ class Layer:
         """
         self.activation = activation
         self.Z = None
-        self.W = w_init if w_init else np.random.randn(input_len, output_len)
+        self.W : Tensor = w_init if w_init else np.random.randn(input_len, output_len)
         # self._grad_x = None
         # self._grad_w = None
         # self.A = None

@@ -35,20 +35,17 @@ class CrossEntropy(Loss):
             np.ndarray: The gradient of the loss function with respect to the weights.
         """
         V = model.layers[-1].Z - C
-        
-        for i in range(1, len(model.layers), -1):
+        first_X = np.concatenate((X, np.ones((1, X.shape[1]))), axis=0)
+        for i in range(0, len(model.layers), -1):
             curr_layer = model.layers[i]
-            prev_layer = model.layers[i - 1]
-            curr_layer.Z.grad = curr_layer.activation.grad_Z(curr_layer.Z)
-            
-            if i == model.
-            layer.Z.grad = layer.activation.grad_Z(layer.Z)
-            layer.W.grad = np.dot(layer.Z.grad, layer.X.T)
-            V = layer.W @ V
-                
-            layer.grad_W = np.dot(layer.grad_X, layer.Z.T)
-            layer.grad_X = np.dot(layer.W.T, layer.grad_X)
-    
+            curr_X = model.layers[i - 1].Z if i > 0 else first_X
+            sigma_tag = curr_layer.activation.grad_Z(curr_layer.Z) * V
+            grad_X = curr_layer.W @ sigma_tag
+            grad_W = curr_X @ sigma_tag.T
+            V = grad_X if i > 0 else None
+            curr_layer.W.grad = grad_W
+
+
     # def grad_W(self, _ : np.ndarray, X: np.ndarray, Z: np.ndarray, C: np.ndarray):
     #     """
     #     Perform the backward pass of the loss function.

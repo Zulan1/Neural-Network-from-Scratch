@@ -10,6 +10,7 @@ from loss import CrossEntropy
 from optimizer import SGD, SGD_momentum
 from utils import train_test_split
 from train import train
+from metrics import accuracy
 
 def parse_list(ctx, param, value):
     """Callback to parse a comma-separated string into a list of integers."""
@@ -82,9 +83,7 @@ def main(data_path: str,
     # Train the model
     losses = train(model, epochs, batch_size, loss_fn, optimizer_fn, X_train, C_train)
     probs = model(X_test)
-    C_test_pred = np.zeros_like(probs)
-    C_test_pred[np.argmax(probs, axis=0), np.arange(probs.shape[1])] = 1
-    accuracy = np.mean(C_test_pred == C_test)
+    accuracy = accuracy(C_test, probs)
 
     minx, miny = np.min(X, axis=1)
     maxx, maxy = np.max(X, axis=1)

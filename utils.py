@@ -20,5 +20,18 @@ def train_test_split(X: np.ndarray, Y: np.ndarray, test_size: float = 0.2):
     Y_train, Y_test = Y[:, training_idx], Y[:, test_idx]
     return X_train, X_test, Y_train, Y_test
 
+def pad(X: np.ndarray) -> np.ndarray:
+    """
+    Pad the input data with ones.
+
+    Parameters:
+        X (np.ndarray): The input data.
+
+    Returns:
+        np.ndarray: The input data with ones.
+    """
+    m = X.shape[1]
+    return np.concatenate((X, np.ones((1, m))), axis=0)
+
 if __name__ == "__main__": #Dvir
     pass

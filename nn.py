@@ -39,7 +39,7 @@ class NeuralNetwork():
         in_shape: int, 
         out_shape: int, 
         activation_type: str, 
-        type: str = 'Linear'
+        resnet: bool = False
     ) -> None:
         assert activation_type.lower() in ['tanh', 'relu', 'softmax'], "Activation function not supported"
         assert not self.layers or self.layers[-1].W.shape[1] == in_shape, \
@@ -55,10 +55,10 @@ class NeuralNetwork():
                 activation = SoftMax()
             case _:
                 raise ValueError("Activation function not supported")
-        if type == 'Linear':
-            layer = Layer(in_shape, out_shape, activation)
-        else:
+        if resnet:
             layer = ResNetLayer(in_shape, out_shape, activation)
+        else:
+            layer = Layer(in_shape, out_shape, activation)
         self.layers.append(layer)
 
 

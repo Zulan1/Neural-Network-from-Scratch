@@ -23,17 +23,19 @@ def parse_list(ctx, param, value):
 @click.option('--data_path', default='data/SwissRollData.mat', type=str, help='Path to the data directory.')
 @click.option('--net_shape', default='2,10,10,2', callback=parse_list, help='Number of layers in the model (comma-separated integers).')
 @click.option('--activation', default='relu', type=click.Choice(['tanh', 'relu']), help='Activation function to use.')
+@click.option('--resnet', is_flag=True, default=False, type=bool, help='True of using ResNet layers')
 @click.option('--loss', default='crossentropy', type=click.Choice(['crossentropy']), help='Loss function to use.')
 @click.option('--optim', default='sgd', type=click.Choice(['sgd', 'sgd_momentum']), help='Optimizer to use.')
 @click.option('--batch_size', default=512, type=int, help='Batch size for training.')
 @click.option('--epochs', default=100, type=int, help='Number of epochs to train the model for.')
-@click.option('--lr', default=1e-4, type=float, help='Learning rate for the optimizer.')
+@click.option('--lr', default=1e-2, type=float, help='Learning rate for the optimizer.')
 @click.option('--beta', default=0.1, type=float, help='Momentum for the optimizer.')
 
 
 def main(data_path: str, 
          net_shape: List[int], 
-         activation: str, 
+         activation: str,
+         resnet: bool,
          loss: str, 
          optim: str, 
          batch_size: int, 
@@ -59,8 +61,10 @@ def main(data_path: str,
     L = len(net_shape) - 1
     for i in range(L):
         input_dim, output_dim = net_shape[i], net_shape[i + 1]
-        if i != L - 1:
-            model.add_layer(input_dim, output_dim, activation)
+        if i == 0:
+            model.add_layer(input_dim, None, activation)
+        elif i != L - 1:
+            model.add_layer(input_dim, output_dim, activation, resnet)
         else:
             model.add_layer(input_dim, output_dim, 'softmax')
 
@@ -83,7 +87,7 @@ def main(data_path: str,
     # Train the model
     losses = train(model, epochs, batch_size, loss_fn, optimizer_fn, X_train, C_train)
     probs = model(X_test)
-    accuracy = accuracy(C_test, probs)
+    acc = accuracy(C_test, probs)
 
     minx, miny = np.min(X, axis=1)
     maxx, maxy = np.max(X, axis=1)
@@ -93,7 +97,7 @@ def main(data_path: str,
     C_grid = np.argmax(C_grid, axis=0)
     C_grid = np.where(C_grid > 0, 1, -1)
     print(f"Loss: {losses[-1]}")
-    print(f"Accuracy: {accuracy}")
+    print(f"Accuracy: {acc}")
     plt.contourf(xx, yy, C_grid.reshape(xx.shape), levels=np.arange(-2, 2), cmap='bwr', alpha=0.5)
     plt.scatter(*X_test, c=np.argmax(C_test, axis=0), cmap='viridis')
     plt.show()

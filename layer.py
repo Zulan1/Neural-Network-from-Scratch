@@ -1,6 +1,8 @@
 import numpy as np
+
 from activations import Activation
 from tensor import Tensor
+from utils import pad
 
 class Layer:
     """Layer class for neural network"""
@@ -19,8 +21,10 @@ class Layer:
         """
         self.activation = activation
         self.layers = [self]
-        self.W: Tensor = w_init if w_init else Tensor(np.random.randn(in_shape + 1, out_shape) * 0.01)
-        self.Z = None
+        if w_init and not isinstance(ResNetLayer, self):
+            assert w_init.shape == (in_shape + 1, out_shape)
+            self.W: Tensor = w_init if w_init else Tensor(np.random.randn(in_shape + 1, out_shape) * 0.01)
+        self.Z: np.ndarray = None
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         """Forward pass of the layer
@@ -28,7 +32,7 @@ class Layer:
             X (np.ndarray): input of the layer
         """
         m = X.shape[1]
-        X = np.concatenate((X, np.ones((1, m))), axis=0)
+        X = pad(X)
         self.Z = self.activation(self.W.T @ X)
         return self.Z
 
@@ -36,13 +40,19 @@ class Layer:
         return self.forward(X)
 
 class ResNetLayer(Layer):
-    def __init__(self, in_shape, out_shape, activation: Activation, w_init = None): #, batch_size = None):
-        super().__init__(in_shape, out_shape, activation, w_init=None)
-        self.W2 = w_init if w_init else np.random.rand(in_shape, out_shape) # might need to allow different randomization
-        self.grad_w2 = None
+    def __init__(self, in_shape, out_shape, activation: Activation, w_init = None):
+        super().__init__(in_shape, out_shape, activation, w_init)
+        if w_init:
+            assert w_init.shape == (in_shape + 1, in_shape, 2)
+        self.W: Tensor = w_init if w_init else Tensor(np.random.randn(in_shape + 1, out_shape, 2) * 0.01)
+        self.inner_Z: np.ndarray = None
 
     def forward(self, X: np.ndarray):
-        out =  self.W2 @ self.activation(self.W, X).T + X # X is of shape (n, m) and W2 is of shape (n, k), W1 of shape (n, k), activation shape (m, k) ,the output is of shape (n, m)
+        W1 = self.W[:, :, 0]
+        W2 = self.W[:, :, 1]
+        out = self.activation(W1.T @ pad(X))
+        self.inner_Z = out
+        out = self.activation(W2.T @ pad(X + out))
         self.Z = out
         return out
         

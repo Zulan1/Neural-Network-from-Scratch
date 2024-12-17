@@ -11,7 +11,7 @@ def accuracy(probs: np.ndarray, y_true: np.ndarray) -> float:
     Returns:
         float: The accuracy of the model.
     """
-    y_pred = np.argmax(probs, axis=1)
+    y_pred = np.argmax(probs, axis=0)
     return np.mean(y_pred == np.argmax(y_true, axis=0))
 
 def precision(probs: np.ndarray, y_true: np.ndarray) -> float:

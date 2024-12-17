@@ -5,6 +5,7 @@ from scipy.io import loadmat
 from loss import CrossEntropy
 from layer import Layer
 from activations import Tanh, ReLU, SoftMax
+from utils import pad
 from tensor import Tensor
 
 def gradient_test(X, C):
@@ -84,7 +85,7 @@ def jacobian_test(X, C):
         err = left_Z - right_Z
         no_grad__abs_err: float = np.linalg.norm(err)
         dZ: np.ndarray = layer.activation.grad(right_Z)
-        X_temp = np.concatenate((X, np.ones((1, m))), axis=0)
+        X_temp = pad(x)
         print(f"{dZ.shape=}, {d.shape=}, {err=}")
         print(f"{eps=}, {d.shape=}")
         print(f"{err - eps * (d.T @ X_temp * dZ)=}")

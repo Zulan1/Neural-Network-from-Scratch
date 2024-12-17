@@ -31,14 +31,14 @@ class CrossEntropy(Loss):
         """
         m = X.shape[1]
         V = model.layers[-1].Z - C
-        for i in range(len(model.layers))[::-1]:
+        for i in reversed(range(len(model.layers))):
             curr_layer = model.layers[i]
             curr_X = model.layers[i - 1].Z if i > 0 else X
             curr_X = np.concatenate((curr_X, np.ones((1, m))), axis=0) # add bias
-            sigma_deriv = curr_layer.activation.grad(curr_layer.Z)
+            sigma_deriv = curr_layer.activation.grad(curr_layer.Z) 
             grad_X = curr_layer.W @ (sigma_deriv * V)
             grad_W = curr_X @ (sigma_deriv * V).T
-            V = grad_X[:-1, :]
+            V = grad_X[:-1, :] # remove bias
             curr_layer.W.grad = grad_W
 
 

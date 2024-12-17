@@ -61,7 +61,6 @@ def jacobian_test(X, C):
     in_shape = X.shape[0]
     out_shape = C.shape[0]
     m = X.shape[1]
-    f: CrossEntropy = CrossEntropy()
     d = np.random.randn(in_shape + 1, out_shape)
     d /= np.linalg.norm(d)
     print(f"{np.linalg.norm(d)=}, {d=}")

@@ -23,7 +23,7 @@ def train_epoch(model: NeuralNetwork, optimizer: Optimizer, loss_fn: Loss,
     """
     running_avg_loss = 0
     m = X.shape[1]
-    num_batches = max(m // batch_size, 1)
+    num_batches = (m - 1 // batch_size) + 1
     Xs = np.array_split(X, num_batches, axis=1)
     Cs = np.array_split(C, num_batches, axis=1)
     for X_batch, C_batch in zip(Xs, Cs):

@@ -25,7 +25,7 @@ class Layer:
             if w_init:
                 assert w_init.shape == (in_shape + 1, out_shape)
             self.W: Tensor = w_init if w_init else Tensor(np.random.randn(in_shape + 1, out_shape) * 0.01)
-        self.Z: np.ndarray = None
+        self.A: np.ndarray = None
 
     def __call__(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)
@@ -35,8 +35,8 @@ class Layer:
         Args:
             X (np.ndarray): input of the layer
         """
-        self.Z = self.activation(self.W.T @ pad(X))
-        return self.Z
+        self.A = self.activation(self.W.T @ pad(X))
+        return self.A
 
     def backward(self, X: np.ndarray, layer, V) -> np.ndarray:
         """Backward pass of the layer
@@ -46,7 +46,7 @@ class Layer:
             V (np.ndarray): gradient of the loss function
             activation (Activation): activation function of the layer
         """
-        sigma_deriv = self.activation.grad(layer.Z)
+        sigma_deriv = self.activation.grad(layer.A)
         grad_W = pad(X) @ (sigma_deriv * V).T
         grad_X = (layer.W @ (sigma_deriv * V))
         self.W.grad = grad_W
@@ -64,22 +64,22 @@ class ResNetLayer(Layer): # X + W2 @ activation(W1 @ X)
         self.W: Tensor = Tensor(np.stack([W1,
                                    pad(W2, axis=0, pad_value=0)],
                                    axis=2))
-        self.inner_Z: np.ndarray = None
+        self.inner_A: np.ndarray = None
 
     def forward(self, X: np.ndarray):
         W1 = self.W[:, :, 0] # k1 + 1 x k2
         W2 = self.W[:-1, :, 1] # k1 x k2
         out = self.activation(W1.T @ pad(X))
-        self.inner_Z = out
+        self.inner_A = out
         out = X + W2 @ out
-        self.Z = out
+        self.A = out
         return out
 
     def backward(self, X: np.ndarray, layer: Layer, V): # dZ/dW2 = v @ Z_inner.T, dZ/dw1 = X @ (sigma'(W1 @ X) * (W2.T @ v)).T, dZ/X = (V.T + ((V.T @ W.2) * sigma'(W1 @ X).T) @ W1.T).T
         W1 = self.W[:, :, 0]
         W2 = self.W[:-1, :, 1]
-        sigma_deriv = self.activation.grad(layer.inner_Z) # k2 x m
-        grad_W2 = V @ layer.inner_Z.T
+        sigma_deriv = self.activation.grad(layer.inner_A) # k2 x m
+        grad_W2 = V @ layer.inner_A.T
         grad_W1 = pad(X) @ (sigma_deriv * (W2.T @ V)).T # k1 + 1 x k2
         grad_X = (V.T + ((V.T @ W2) * sigma_deriv.T) @ W1[:-1, :].T).T # k1 x m
         self.W.grad = np.stack([

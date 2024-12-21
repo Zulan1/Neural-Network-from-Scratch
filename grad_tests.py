@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from scipy.io import loadmat
 from loss import CrossEntropy
@@ -8,6 +9,7 @@ from activations import Tanh, ReLU, SoftMax
 from utils import pad
 from tensor import Tensor
 from nn import NeuralNetwork
+
 
 def gradient_test(X, C):
     in_shape = X.shape[0]
@@ -55,6 +57,7 @@ def gradient_test(X, C):
     plt.text(n_iter - 2, grad_errs[-1], f"Slope: {slope_grad:.2f}", color='r')
     plt.yscale('log')
     plt.legend()
+    plt.savefig('./plots/grad_test.png')
     plt.show()
 
 def jacobian_test_W(X, C):
@@ -215,6 +218,7 @@ if __name__ == '__main__':
     Data = loadmat('Data/GMMData.mat')
     X, C = Data['Yt'], Data['Ct']
     print(f"{X.shape=}, {C.shape=}")
+    os.makedirs('./plots', exist_ok=True)
     grad_test_model(X, C)
     jacobian_test_W(X, C)
     jacobian_test_X(X, C)

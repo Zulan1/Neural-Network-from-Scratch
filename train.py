@@ -27,6 +27,9 @@ def train_epoch(model: NeuralNetwork, optimizer: Optimizer, loss_fn: Loss,
     Xs = np.array_split(X, num_batches, axis=1)
     Cs = np.array_split(C, num_batches, axis=1)
     for X_batch, C_batch in zip(Xs, Cs):
+        if X_batch.size == 0:
+            continue
+
         # Forward pass
         out = model(X_batch)
 
@@ -37,13 +40,14 @@ def train_epoch(model: NeuralNetwork, optimizer: Optimizer, loss_fn: Loss,
 
         # Update weights
         optimizer.step(model)
-        running_avg_loss += loss / m
+        running_avg_loss += loss * X_batch.shape[1]
 
-    return running_avg_loss
+    return running_avg_loss / m
 
 def train(model: NeuralNetwork, epochs: int, batch_size: int,
           loss_fn: Loss = CrossEntropy(), optimizer: Optimizer = SGD(1e-3),
-          X: np.ndarray = None, C: np.ndarray = None):
+          X: np.ndarray = None, C: np.ndarray = None, 
+          X_val: np.ndarray = None, C_val: np.ndarray = None):
     """
     Train the model using the given optimizer.
 
@@ -54,12 +58,16 @@ def train(model: NeuralNetwork, epochs: int, batch_size: int,
         optimizer (Optimizer): The optimizer to use for training.
     """
     losses = []
+    val_losses = []
     for _ in tqdm(range(epochs), desc="Training"):
         # Forward pass
         loss = train_epoch(model, optimizer, loss_fn, X, C, batch_size)
+        val_loss = loss_fn(model(X_val), C_val) if X_val is not None else None
         losses.append(loss)
+        if val_loss is not None:
+            val_losses.append(val_loss)
 
-    return losses
+    return losses, val_losses
 
 if __name__ == "__main__":
     L = 3

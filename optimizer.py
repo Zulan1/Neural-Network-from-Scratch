@@ -24,9 +24,9 @@ class SGD_momentum(Optimizer):
         self.beta = beta
 
     def update(self, W):
-        assert W.grad is not None, "Didn't find a gradient, did you forget to call loss.backward()?"       
-        grad = W.grad + self.beta * W.prev_grad
-        return W - self.lr * grad
+        assert W.grad is not None, "Didn't find a gradient, did you forget to call loss.backward()?"
+        W.v = self.beta * W.v - self.lr * W.grad
+        return W + W.v
 
 
 if __name__ == "__main__":

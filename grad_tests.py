@@ -26,14 +26,12 @@ def gradient_test(X, C):
         eps = 1e-2 * (0.5 ** i)
 
         # Compute left term
-        W += eps * d
-        Z = layer(X)
-        leff_err = f(Z, C)
+        A = layer.activation((W + eps * d).T @ X)
+        leff_err = f(A, C)
 
         # Compute right term
-        W -= eps * d
-        Z = layer(X)
-        right_err = f(Z, C)
+        A = layer.activation(W.T @ X)
+        right_err = f(A, C)
 
         err = leff_err - right_err
         no_grad__abs_err: float = np.abs(err)
@@ -75,17 +73,17 @@ def jacobian_test_W(X, C):
         eps = 1e-2 * (0.5 ** i)
 
         # Compute left term
-        left_Z = layer.activation((W + eps * d).T @ pad(X))
-        right_Z = layer.activation(W.T @ pad(X))
+        left_A = layer.activation((W + eps * d).T @ pad(X))
+        right_A = layer.activation(W.T @ pad(X))
 
-        err = left_Z - right_Z
+        err = left_A - right_A
         no_grad__abs_err: float = np.linalg.norm(err)
-        dZ: np.ndarray = layer.activation.grad(right_Z)
+        dA: np.ndarray = layer.activation.grad(right_A)
         X_temp = pad(X)
-        print(f"{dZ.shape=}, {d.shape=}, {err=}")
+        print(f"{dA.shape=}, {d.shape=}, {err=}")
         print(f"{eps=}, {d.shape=}")
-        print(f"{err - eps * (d.T @ X_temp * dZ)=}")
-        grad_abs_err = np.linalg.norm(err - eps * (d.T @ X_temp * dZ))
+        print(f"{err - eps * (d.T @ X_temp * dA)=}")
+        grad_abs_err = np.linalg.norm(err - eps * (d.T @ X_temp * dA))
         print(f"{grad_abs_err=}, {no_grad__abs_err=}")
 
         no_grad_errs.append(no_grad__abs_err)
@@ -122,13 +120,13 @@ def jacobian_test_X(X, C):
         eps = 0.5 * (0.5 ** i)
 
         # Compute left term
-        left_Z = layer.activation(W.T @ pad(X + eps * d))
-        right_Z = layer.activation(W.T @ pad(X))
+        left_A = layer.activation(W.T @ pad(X + eps * d))
+        right_A = layer.activation(W.T @ pad(X))
 
-        err = left_Z - right_Z
+        err = left_A - right_A
         no_grad__abs_err: float = np.linalg.norm(err)
-        dZ: np.ndarray = layer.activation.grad(right_Z)
-        grad_abs_err = np.linalg.norm(err - eps * (W.T[:,:-1] @ d * dZ))
+        dA: np.ndarray = layer.activation.grad(right_A)
+        grad_abs_err = np.linalg.norm(err - eps * (W.T[:,:-1] @ d * dA))
 
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
@@ -175,16 +173,16 @@ def grad_test_model(X, C):
             size = layer.W.size
             layer.W += eps * d[prev_size:prev_size + size].reshape(layer.W.shape)
             prev_size += size
-        Z = model(X)
-        left_err = loss(Z, C)
+        A = model(X)
+        left_err = loss(A, C)
 
         prev_size = 0
         for i, layer in enumerate(model.layers):
             size = layer.W.size
             layer.W -= eps * d[prev_size:prev_size + size].reshape(layer.W.shape)
             prev_size += size
-        Z = model(X)
-        right_err = loss(Z, C)
+        A = model(X)
+        right_err = loss(A, C)
 
         err = left_err - right_err
         no_grad__abs_err: float = np.linalg.norm(err)

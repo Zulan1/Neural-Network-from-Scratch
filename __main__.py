@@ -36,7 +36,7 @@ def parse_list(_, __, value):
 @click.option('--batch_size', default=512, type=int, help='Batch size for training.')
 @click.option('--epochs', default=100, type=int, help='Number of epochs to train the model for.')
 @click.option('--lr', default=1e-2, type=float, help='Learning rate for the optimizer.')
-@click.option('--momentum', default=None, type=float, help='Momentum for the optimizer.')
+@click.option('--momentum', default=0.0, type=float, help='Momentum for the optimizer.')
 
 
 def main(data_path: str, 

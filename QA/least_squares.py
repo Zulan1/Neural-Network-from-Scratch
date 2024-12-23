@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from nn.layer import Layer
-from utils.tensor import Tensor
 from nn.optimizer import SGD_momentum
-from utils import pad
+from nn.utils.tensor import Tensor
+from nn.utils import pad
 
 
 if __name__ == "__main__":

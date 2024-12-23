@@ -8,8 +8,8 @@ from nn.loss import CrossEntropy
 from nn.layer import Layer
 from nn.activations import Tanh, SoftMax
 from nn import NeuralNetwork
-from utils import pad
-from utils.tensor import Tensor
+from nn.utils import pad
+from nn.utils.tensor import Tensor
 
 
 def gradient_test(X, C):

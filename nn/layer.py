@@ -1,8 +1,8 @@
 import numpy as np
 
 from .activations import Activation
-from utils.tensor import Tensor
-from utils import pad
+from .utils.tensor import Tensor
+from .utils import pad
 
 
 class Layer:

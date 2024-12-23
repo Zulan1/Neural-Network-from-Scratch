@@ -27,7 +27,7 @@ def optuna_train(X: np.ndarray, C: np.ndarray, batch_size: int, epochs: int):
         net_shape.append(out_shape)
         activation = trial.suggest_categorical('activation', ['tanh', 'relu'])
         momentum = trial.suggest_categorical('momentum', list(np.arange(0, 1, 0.1)))
-        lr = trial.suggest_categorical('lr', [10 ** i for i in range(-5, 0)] + [0.5 * 10 ** i for i in range(-5, 0)])
+        lr = trial.suggest_categorical('lr', [10 ** i for i in range(-5, 0)] + [0.5 * 10 ** i for i in range(-5, 1)])
 
         model, optim_fn, loss_fn = nn_builder(net_shape, activation, resnet, 'crossentropy', 'sgd', lr, momentum)
 

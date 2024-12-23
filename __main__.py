@@ -6,13 +6,14 @@ from scipy.io import loadmat
 from typing import List
 
 from nn import NeuralNetwork
-from loss import CrossEntropy
-from optimizer import SGD, SGD_momentum
-from utils import train_test_split
+from nn.loss import CrossEntropy
+from nn.optimizer import SGD, SGD_momentum
+from plots import plot_train_losses, plot_model_decision_boundries
 from train import train
 from metrics import accuracy
 
-def parse_list(ctx, param, value):
+
+def parse_list(_, __, value):
     """Callback to parse a comma-separated string into a list of integers."""
     try:
         lis = []
@@ -52,11 +53,11 @@ def main(data_path: str,
          beta: float):
     # Load the data
     data = loadmat(data_path)
-    X, C = data['Yt'], data['Ct']
-    print(f"{X.shape=}, {C.shape=}")
-    X_train, X_test, C_train, C_test = train_test_split(X, C, test_size=0.2)
-    X_train, X_val, C_train, C_val = train_test_split(X_train, C_train, test_size=0.2)
-    print(f"{C_train=}")
+    X_train, C_train = data['Yt'], data['Ct']
+    X_test, C_test = data['Yv'], data['Cv']
+
+    print(f"{X_train.shape=}, {C_train.shape=}")
+    print(f"{X_test.shape=}, {C_test.shape=}")
     print(f"{net_shape=}")
 
     # Initialize the model
@@ -83,6 +84,8 @@ def main(data_path: str,
     if optim == 'sgd':
         optimizer_fn = SGD(lr)
     elif optim == 'sgd_momentum':
+        if beta is None:
+            raise ValueError("Momentum requires a beta value.")
         optimizer_fn = SGD_momentum(lr, beta)
     else:
         raise ValueError(f"Unsupported optimizer: {optim}")
@@ -94,41 +97,45 @@ def main(data_path: str,
         raise ValueError(f"Unsupported loss function: {loss}")
 
 
-    
+    plot_train_losses(model=model, loss_fn=loss_fn,
+                       optimizer_fn=optimizer_fn, epochs=epochs,
+                         batch_size=batch_size, X_train=X_train,
+                           C_train=C_train, X_val=X_test, C_val=C_test)
+    plot_model_decision_boundries(model, X_test, C_test)
     # Train the model
-    losses, val_losses = train(model,\
-                               epochs,
-                               batch_size,
-                               loss_fn,
-                               optimizer_fn,
-                               X_train,
-                               C_train,
-                               X_val,
-                               C_val
-                               )
-    probs = model(X_test)
-    acc = accuracy(C_test, probs)
-    _, ax = plt.subplots(1, 2)
+    # losses, val_losses = train(model,\
+    #                            epochs,
+    #                            batch_size,
+    #                            loss_fn,
+    #                            optimizer_fn,
+    #                            X_train,
+    #                            C_train,
+    #                            X_test,
+    #                            C_test,
+    #                            )
+    # probs = model(X_test)
+    # acc = accuracy(C_test, probs)
+    # _, ax = plt.subplots(1, 2)
 
-    minx, miny = np.min(X, axis=1)
-    maxx, maxy = np.max(X, axis=1)
-    xx, yy = np.meshgrid(np.linspace(minx, maxx, 100), np.linspace(miny, maxy, 100))
-    X_grid = np.vstack([xx.ravel(), yy.ravel()])
-    C_grid = model(X_grid)
-    C_grid = np.argmax(C_grid, axis=0)
-    print(f"Loss: {losses[-1]}")
-    print(f"Accuracy: {acc}")
-    ax[0].contourf(xx, yy, C_grid.reshape(xx.shape), levels=np.arange(C.shape[0] + 1) - 0.5, alpha=0.5)
-    ax[1].scatter(*X_test, c=np.argmax(C_test, axis=0), cmap='viridis')
-    plt.show()
-    plt.plot(range(epochs), losses, label='Training Loss', color='k')
-    if val_losses:
-        plt.plot(range(epochs), val_losses, label='Validation Loss', color='r')
-    plt.legend()
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training Loss')
-    plt.show()
+    # minx, miny = np.min(X_train, axis=1)
+    # maxx, maxy = np.max(X_train, axis=1)
+    # xx, yy = np.meshgrid(np.linspace(minx, maxx, 100), np.linspace(miny, maxy, 100))
+    # X_grid = np.vstack([xx.ravel(), yy.ravel()])
+    # C_grid = model(X_grid)
+    # C_grid = np.argmax(C_grid, axis=0)
+    # print(f"Loss: {losses[-1]}")
+    # print(f"Accuracy: {acc}")
+    # ax[0].contourf(xx, yy, C_grid.reshape(xx.shape), levels=np.arange(C_train.shape[0] + 1) - 0.5, alpha=0.5)
+    # ax[1].scatter(*X_test, c=np.argmax(C_test, axis=0), cmap='viridis')
+    # plt.show()
+    # plt.plot(range(epochs), losses, label='Training Loss', color='k')
+    # if val_losses:
+    #     plt.plot(range(epochs), val_losses, label='Validation Loss', color='r')
+    # plt.legend()
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Loss')
+    # plt.title('Training Loss')
+    # plt.show()
     
 
 

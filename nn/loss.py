@@ -1,8 +1,7 @@
 import numpy as np
 
 from abc import ABC, abstractmethod
-from layer import ResNetLayer
-from utils import pad
+
 
 class Loss(ABC):
     def init(self):
@@ -32,7 +31,8 @@ class CrossEntropy(Loss):
         Returns:
             np.ndarray: The gradient of the loss function with respect to the weights.
         """
-        V = model.layers[-1].A - C # (Z - C) / Z * (1 - Z)
+        m = X.shape[1]
+        V = (1 / m) * (model.layers[-1].A - C)
         for i in reversed(range(len(model.layers))):
             curr_layer = model.layers[i]
             curr_X = model.layers[i - 1].A if i > 0 else X

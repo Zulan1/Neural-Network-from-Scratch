@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def accuracy(probs: np.ndarray, y_true: np.ndarray) -> float:
     """
     Calculate the accuracy of the model.

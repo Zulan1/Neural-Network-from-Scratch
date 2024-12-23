@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 import os
 
 from scipy.io import loadmat
-from loss import CrossEntropy
-from layer import Layer
-from activations import Tanh, ReLU, SoftMax
-from utils import pad
-from tensor import Tensor
+
+from nn.loss import CrossEntropy
+from nn.layer import Layer
+from nn.activations import Tanh, SoftMax
 from nn import NeuralNetwork
+from utils import pad
+from utils.tensor import Tensor
 
 
 def gradient_test(X, C):
@@ -17,26 +18,25 @@ def gradient_test(X, C):
     f: CrossEntropy = CrossEntropy()
     d = np.random.randn(in_shape + 1, out_shape)
     d /= np.linalg.norm(d)
-    print(f"{np.linalg.norm(d)=}, {d=}")
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
     layer = Layer(in_shape, out_shape, SoftMax())
     W: Tensor = layer.W.view()
-    print(f"{W.shape=}, {X.shape=}, {C.shape=}")
     for i in range(1, n_iter + 1):
         eps = 1e-2 * (0.5 ** i)
 
         # Compute left term
-        A = layer.activation((W + eps * d).T @ X)
+        A = layer.activation((W + eps * d).T @ pad(X))
         leff_err = f(A, C)
 
         # Compute right term
-        A = layer.activation(W.T @ X)
+        A = layer.activation(W.T @ pad(X))
         right_err = f(A, C)
 
         err = leff_err - right_err
         no_grad__abs_err: float = np.abs(err)
+        layer(X)
         f.backward(layer, X, C)
         dW: np.ndarray = layer.W.grad
         grad_abs_err = np.abs(err - eps * (d.ravel() @ dW.ravel()))
@@ -65,13 +65,11 @@ def jacobian_test_W(X, C):
     out_shape = C.shape[0]
     d = np.random.randn(in_shape + 1, out_shape)
     d /= np.linalg.norm(d)
-    print(f"{np.linalg.norm(d)=}, {d=}")
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
     layer = Layer(in_shape, out_shape, Tanh())
     W: Tensor = layer.W.view()
-    print(f"{W.shape=}, {X.shape=}, {C.shape=}")
     for i in range(1, n_iter + 1):
         eps = 1e-2 * (0.5 ** i)
 
@@ -83,11 +81,7 @@ def jacobian_test_W(X, C):
         no_grad__abs_err: float = np.linalg.norm(err)
         dA: np.ndarray = layer.activation.grad(right_A)
         X_temp = pad(X)
-        print(f"{dA.shape=}, {d.shape=}, {err=}")
-        print(f"{eps=}, {d.shape=}")
-        print(f"{err - eps * (d.T @ X_temp * dA)=}")
         grad_abs_err = np.linalg.norm(err - eps * (d.T @ X_temp * dA))
-        print(f"{grad_abs_err=}, {no_grad__abs_err=}")
 
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
@@ -112,13 +106,11 @@ def jacobian_test_X(X, C):
     out_shape = C.shape[0]
     d = np.random.randn(*X.shape)
     d /= np.linalg.norm(d)
-    print(f"{np.linalg.norm(d)=}, {d=}")
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
     layer = Layer(in_shape, out_shape, Tanh())
     W: Tensor = layer.W.view()
-    print(f"{W.shape=}, {X.shape=}, {C.shape=}")
     for i in range(1, n_iter + 1):
         eps = 0.5 * (0.5 ** i)
 
@@ -160,11 +152,9 @@ def grad_test_model(X, C):
             model.add_layer(input_dim, output_dim, 'softmax')
         else:
             model.add_layer(input_dim, output_dim, 'tanh')
-    shapes = [layer.W.shape for layer in model.layers]
     W = np.concatenate([layer.W.ravel() for layer in model.layers])
     d = np.random.randn(*W.shape)
     d /= np.linalg.norm(d)
-    print(f"{d.shape=}")
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
@@ -217,7 +207,6 @@ def grad_test_model(X, C):
 if __name__ == '__main__':
     Data = loadmat('Data/GMMData.mat')
     X, C = Data['Yt'], Data['Ct']
-    print(f"{X.shape=}, {C.shape=}")
     os.makedirs('./plots', exist_ok=True)
     grad_test_model(X, C)
     jacobian_test_W(X, C)

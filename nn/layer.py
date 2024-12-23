@@ -1,8 +1,9 @@
 import numpy as np
 
-from activations import Activation
-from tensor import Tensor
+from .activations import Activation
+from utils.tensor import Tensor
 from utils import pad
+
 
 class Layer:
     """Layer class for neural network"""

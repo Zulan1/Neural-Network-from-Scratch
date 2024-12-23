@@ -1,7 +1,9 @@
-from typing import List
 import numpy as np
-from layer import Layer, ResNetLayer
-from activations import Tanh, ReLU, SoftMax
+
+from typing import List
+from .layer import Layer, ResNetLayer
+from .activations import Tanh, ReLU, SoftMax
+
 
 class NeuralNetwork():
     """

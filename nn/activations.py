@@ -1,5 +1,7 @@
-from abc import ABC, abstractmethod
 import numpy as np
+
+from abc import ABC, abstractmethod
+
 
 class Activation(ABC):
 
@@ -56,7 +58,7 @@ class ReLU(Activation):
         Returns:
         np.ndarray: Output array with ReLU activation applied.
         """
-        A = A.copy()
+        A = Z.copy()
         A[A < 0] = 0
         return A
 

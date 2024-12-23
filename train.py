@@ -3,10 +3,11 @@ import numpy as np
 from tqdm import tqdm
 
 from nn import NeuralNetwork
-from layer import Layer, ResNetLayer
-from loss import Loss, CrossEntropy
-from optimizer import Optimizer, SGD
-from activations import ReLU, SoftMax
+from nn.layer import Layer
+from nn.loss import Loss, CrossEntropy
+from nn.optimizer import Optimizer, SGD
+from nn.activations import ReLU, SoftMax
+
 
 def train_epoch(model: NeuralNetwork, optimizer: Optimizer, loss_fn: Loss, 
                 X: np.ndarray, C: np.ndarray, batch_size: int):
@@ -23,7 +24,7 @@ def train_epoch(model: NeuralNetwork, optimizer: Optimizer, loss_fn: Loss,
     """
     running_avg_loss = 0
     m = X.shape[1]
-    num_batches = (m - 1 // batch_size) + 1
+    num_batches = ((m - 1) // batch_size) + 1
     Xs = np.array_split(X, num_batches, axis=1)
     Cs = np.array_split(C, num_batches, axis=1)
     for X_batch, C_batch in zip(Xs, Cs):
@@ -70,20 +71,4 @@ def train(model: NeuralNetwork, epochs: int, batch_size: int,
     return losses, val_losses
 
 if __name__ == "__main__":
-    L = 3
-    lr = 1e-3
-    epochs = 100
-
-
-    X_train, X_test, X_val = np.array([[0, 0], [0, 1], [1, 0], [1, 1]]).T
-    X_train.split () # -> (M/m, n ,m)
-    C = np.array([[0, 1], [1, 0], [1, 0], [0, 1]]).T
-
-    model = NeuralNetwork()
-    for _ in range(L - 1):
-        model.add_layer(Layer(2, 2, ReLU()))
-    model.add_layer(Layer(2, 1, SoftMax()))
-    loss_fn = CrossEntropy()
-    
-    
-    train(model, epochs, lr, loss_fn, X_train, C)
+    pass

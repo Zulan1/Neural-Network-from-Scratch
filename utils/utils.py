@@ -1,3 +1,5 @@
+import numpy as np
+
 from typing import List
 from nn import NeuralNetwork
 from nn.loss import CrossEntropy
@@ -39,3 +41,15 @@ def nn_builder(
         raise ValueError(f"Unsupported loss function: {loss}")
     
     return model, optimizer_fn, loss_fn
+
+def split_into_batches(X: np.ndarray, batch_size):
+    """
+    Splits a NumPy array into batches of size `batch_size`.
+    Args:
+        arr (np.ndarray): The input array.
+        batch_size (int): Size of each batch.
+    Returns:
+        list: A list of NumPy arrays, each of size `batch_size` (except possibly the last one).
+    """
+    m = X.shape[1]
+    return [X[:, i:i + batch_size] for i in range(0, m, batch_size)]

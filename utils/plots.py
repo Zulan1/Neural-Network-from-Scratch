@@ -7,6 +7,7 @@ from nn import NeuralNetwork
 from nn.loss import Loss
 from nn.optimizer import Optimizer
 from train import train_epoch
+from metrics import accuracy
 
 
 def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
@@ -34,7 +35,6 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
 
     # Prepare the interactive plot
     _, ax = plt.subplots()
-    # ax.set_xlim(0, epochs)
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Loss')
     ax.set_title('Training and Validation Loss')
@@ -53,7 +53,7 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
         plt.draw()
         plt.pause(0.01)
 
-    for _ in tqdm(range(epochs), desc="Training Model"):
+    for i in tqdm(range(epochs), desc="Training Model"):
         epoch_train_loss = train_epoch(model, optim, loss_fn, X_train, C_train, batch_size)  # Set model to training mode
 
         val_predictions = model(X_val)
@@ -61,8 +61,16 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
 
         update_graph(epoch_train_loss, epoch_val_loss)
 
+        if i > 0.9 * epochs and val_losses[-1] > np.min(val_losses[int(0.8 * epochs):]):
+            print(f"Early stopping at epoch {i}")
+            break
+
+
     plt.show()
-    print(f"Training complete.\n Model final loss: {train_losses[-1]:.2f}\n Validation final loss: {val_losses[-1]:.2f}")
+
+    acc = accuracy(model(X_train), C_train)
+
+    print(f"Training complete.\nModel final loss: {train_losses[-1]:.2f}\nValidation final loss: {val_losses[-1]:.2f}\nTraining accuracy: {acc:.2f}")
 
 
 def plot_model_decision_boundries(model: NeuralNetwork, X: np.ndarray, C: np.ndarray):

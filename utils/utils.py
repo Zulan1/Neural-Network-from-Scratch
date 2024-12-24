@@ -53,3 +53,20 @@ def split_into_batches(X: np.ndarray, batch_size):
     """
     m = X.shape[1]
     return [X[:, i:i + batch_size] for i in range(0, m, batch_size)]
+
+def train_test_split(X: np.ndarray, C: np.ndarray, test_size: float):
+    """
+    Splits the data into training and testing sets.
+    Args:
+        X (np.ndarray): The input data.
+        C (np.ndarray): The target data.
+        test_size (float): The fraction of the data to reserve for testing.
+    Returns:
+        tuple: A tuple containing the training and testing data.
+    """
+    m = X.shape[1]
+    idx = np.random.permutation(m)
+    split = int(m * (1 - test_size))
+    X_train, X_test = X[:, idx[:split]], X[:, idx[split:]]
+    C_train, C_test = C[:, idx[:split]], C[:, idx[split:]]
+    return X_train, C_train, X_test, C_test

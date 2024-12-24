@@ -7,8 +7,7 @@ from typing import List
 
 from utils import nn_builder
 from utils import plot_train_losses, plot_model_decision_boundries
-from train import train
-from metrics import accuracy
+from utils import train_test_split
 
 
 def parse_list(_, __, value):
@@ -28,7 +27,7 @@ def parse_list(_, __, value):
 
 @click.command()
 @click.option('--data_path', default='data/SwissRollData.mat', type=str, help='Path to the data directory.')
-@click.option('--net_shape', default='2,2x15,2', callback=parse_list, help='Number of layers in the model (comma-separated integers).')
+@click.option('--net_shape', default='2x15', callback=parse_list, help='Width of intermediate layers (comma-separated integers).')
 @click.option('--activation', default='relu', type=click.Choice(['tanh', 'relu']), help='Activation function to use.')
 @click.option('--resnet', is_flag=True, default=False, type=bool, help='True of using ResNet layers')
 @click.option('--loss', default='crossentropy', type=click.Choice(['crossentropy']), help='Loss function to use.')
@@ -52,6 +51,7 @@ def main(data_path: str,
     # Load the data
     data = loadmat(data_path)
     X_train, C_train = data['Yt'], data['Ct']
+    X_train, C_train, X_val, C_val = train_test_split(X_train, C_train, test_size=0.2)
     X_test, C_test = data['Yv'], data['Cv']
 
     print(f"{X_train.shape=}, {C_train.shape=}")
@@ -61,6 +61,7 @@ def main(data_path: str,
     # Initialize the model
     input_dim = X_train.shape[0]
     output_dim = C_train.shape[0]
+    net_shape = [input_dim] + net_shape + [output_dim]
     assert net_shape[0] == input_dim, \
     f"First layer must have the same shape as the input data. Expected {input_dim}, got {net_shape[0]}"
     assert net_shape[-1] == output_dim, \
@@ -78,8 +79,8 @@ def main(data_path: str,
         'batch_size': batch_size,
         'X_train': X_train,
         'C_train': C_train,
-        'X_val': X_test,
-        'C_val': C_test
+        'X_val': X_val,
+        'C_val': C_val
     }
 
     plot_train_losses(**train_args)

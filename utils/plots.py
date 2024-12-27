@@ -13,7 +13,7 @@ from metrics import accuracy
 def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
              epochs: int, batch_size: int,
              X_train: np.ndarray, C_train: np.ndarray,
-             X_val: np.ndarray, C_val: np.ndarray):
+             X_val: np.ndarray, C_val: np.ndarray, save_path: str):
     """
     Train a neural network model and display an interactive graph of training
     and validation losses.
@@ -42,14 +42,21 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
     val_line, = ax.plot([], [], label='Validation Loss', color='orange')
     plt.legend()
 
+    # Add a text box for learning rate
+    lr_text = ax.text(0.1, 0.95, '', transform=ax.transAxes)
+    loss_text = ax.text(0.1, 0.85, '', transform=ax.transAxes)
+
     # Helper function to update the graph
-    def update_graph(train_loss, val_loss):
+    def update_graph(train_loss, val_loss, lr, t):
         train_losses.append(train_loss)
         val_losses.append(val_loss)
         train_line.set_data(range(len(train_losses)), train_losses)
         val_line.set_data(range(len(val_losses)), val_losses)
         ax.relim()
         ax.autoscale_view()
+        lr_text.set_text(f'Learning Rate: {lr / np.sqrt(t):.6f}')
+        loss_text.set_text(f'Train Loss: {train_loss:.2f}\nVal Loss: {val_loss:.2f}')
+        # print(f"{lr=}")
         plt.draw()
         plt.pause(0.01)
 
@@ -59,13 +66,13 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
         val_predictions = model(X_val)
         epoch_val_loss = loss_fn(val_predictions, C_val)
 
-        update_graph(epoch_train_loss, epoch_val_loss)
+        update_graph(epoch_train_loss, epoch_val_loss, optim.lr, optim.t)
 
-        if i > 0.9 * epochs and val_losses[-1] > np.min(val_losses[int(0.8 * epochs):]):
+        if i > 0.9 * epochs and val_losses[-1] > np.min(val_losses):
             print(f"Early stopping at epoch {i}")
             break
 
-
+    plt.savefig(f'{save_path}_loss_plots.png')
     plt.show()
 
     acc = accuracy(model(X_train), C_train)
@@ -73,7 +80,7 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
     print(f"Training complete.\nModel final loss: {train_losses[-1]:.2f}\nValidation final loss: {val_losses[-1]:.2f}\nTraining accuracy: {acc:.2f}")
 
 
-def plot_model_decision_boundries(model: NeuralNetwork, X: np.ndarray, C: np.ndarray):
+def plot_model_decision_boundries(model: NeuralNetwork, X: np.ndarray, C: np.ndarray, save_path: str):
     """
     Plot the decision boundaries of a neural network model.
 
@@ -95,5 +102,5 @@ def plot_model_decision_boundries(model: NeuralNetwork, X: np.ndarray, C: np.nda
     ax[1].scatter(*X, c=np.argmax(C, axis=0), cmap='viridis')
     ax[2].contourf(xx, yy, C_grid.reshape(xx.shape), levels=np.arange(C.shape[0] + 1) - 0.5, alpha=0.5)
     ax[2].scatter(*X, c=np.argmax(C, axis=0), cmap='viridis')
-
+    plt.savefig(f'{save_path}_predictions.png')
     plt.show()

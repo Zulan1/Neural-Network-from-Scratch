@@ -26,7 +26,7 @@ def parse_list(_, __, value):
         raise click.BadParameter('List must contain integers separated by commas.')
 
 @click.command()
-@click.option('--data_path', default='data/SwissRollData.mat', type=str, help='Path to the data directory.')
+@click.option('--dataset', default='SwissRoll', type=str, help='Path to the data directory.')
 @click.option('--net_shape', default='2x15', callback=parse_list, help='Width of intermediate layers (comma-separated integers).')
 @click.option('--activation', default='relu', type=click.Choice(['tanh', 'relu']), help='Activation function to use.')
 @click.option('--resnet', is_flag=True, default=False, type=bool, help='True of using ResNet layers')
@@ -38,7 +38,7 @@ def parse_list(_, __, value):
 @click.option('--momentum', default=0.0, type=float, help='Momentum for the optimizer.')
 
 
-def main(data_path: str, 
+def main(dataset: str, 
          net_shape: List[int], 
          activation: str,
          resnet: bool,
@@ -49,7 +49,9 @@ def main(data_path: str,
          lr: float, 
          momentum: float):
     # Load the data
-    data = loadmat(data_path)
+    dataset = 'SwissRollData'
+    data = loadmat(f"Data/{dataset}Data.mat")
+    save_path = f'figures/200_datapoints_{dataset}'
     X_train, C_train = data['Yt'], data['Ct']
     X_train, C_train, X_val, C_val = train_test_split(X_train, C_train, test_size=0.2)
     X_test, C_test = data['Yv'], data['Cv']
@@ -80,11 +82,12 @@ def main(data_path: str,
         'X_train': X_train,
         'C_train': C_train,
         'X_val': X_val,
-        'C_val': C_val
+        'C_val': C_val,
+        'save_path': save_path
     }
 
     plot_train_losses(**train_args)
-    plot_model_decision_boundries(model, X_test, C_test)    
+    plot_model_decision_boundries(model, X_test, C_test, save_path)    
 
 
 if __name__ == "__main__":

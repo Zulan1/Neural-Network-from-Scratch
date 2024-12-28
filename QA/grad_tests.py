@@ -5,12 +5,31 @@ import os
 from scipy.io import loadmat
 
 from nn.loss import CrossEntropy
-from nn.layer import Layer
+from nn.layer import Layer, ResNetLayer
 from nn.activations import Tanh, SoftMax
 from nn import NeuralNetwork
 from nn.utils import pad
 from nn.utils.tensor import Tensor
 
+
+def plot_test(grad_errs, no_grad_errs, title):
+    n_iter = len(grad_errs)
+    log_no_grad_errs = np.log(no_grad_errs)
+    log_grad_errs = np.log(grad_errs)
+
+    slope_no_grad, _ = np.polyfit(range(n_iter), log_no_grad_errs, 1)
+    slope_grad, _ = np.polyfit(range(n_iter), log_grad_errs, 1)
+
+
+    plt.plot(range(n_iter), no_grad_errs, label='No grad')#, color='b')
+    plt.plot(range(n_iter), grad_errs, label='Grad')#, color='r')
+    plt.text(n_iter - 2, no_grad_errs[-1], f"Slope: {slope_no_grad:.2f}")#, color='b')
+    plt.text(n_iter - 2, grad_errs[-1], f"Slope: {slope_grad:.2f}")#, color='r')
+    plt.yscale('log')
+    plt.legend()
+    plt.title(title)
+    plt.savefig(f'./plots/{title}.png')
+    plt.show()
 
 def gradient_test(X, C):
     in_shape = X.shape[0]
@@ -44,21 +63,7 @@ def gradient_test(X, C):
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
     
-    log_no_grad_errs = np.log(no_grad_errs)
-    log_grad_errs = np.log(grad_errs)
-
-    slope_no_grad, _ = np.polyfit(range(n_iter), log_no_grad_errs, 1)
-    slope_grad, _ = np.polyfit(range(n_iter), log_grad_errs, 1)
-
-
-    plt.plot(range(n_iter), no_grad_errs, label='No grad', color='b')
-    plt.plot(range(n_iter), grad_errs, label='Grad', color='r')
-    plt.text(n_iter - 2, no_grad_errs[-1], f"Slope: {slope_no_grad:.2f}", color='b')
-    plt.text(n_iter - 2, grad_errs[-1], f"Slope: {slope_grad:.2f}", color='r')
-    plt.yscale('log')
-    plt.legend()
-    plt.savefig('./plots/grad_test.png')
-    plt.show()
+    plot_test(grad_errs, no_grad_errs, 'Softmax Gradient Test')
 
 def jacobian_test_W(X, C):
     in_shape = X.shape[0]
@@ -86,20 +91,7 @@ def jacobian_test_W(X, C):
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
     
-    log_no_grad_errs = np.log(no_grad_errs)
-    log_grad_errs = np.log(grad_errs)
-
-    slope_no_grad, _ = np.polyfit(range(n_iter), log_no_grad_errs, 1)
-    slope_grad, _ = np.polyfit(range(n_iter), log_grad_errs, 1)
-
-
-    plt.plot(range(n_iter), no_grad_errs, label='No grad', color='b')
-    plt.plot(range(n_iter), grad_errs, label='Grad', color='r')
-    plt.text(n_iter - 2, no_grad_errs[-1], f"Slope: {slope_no_grad:.2f}", color='b')
-    plt.text(n_iter - 2, grad_errs[-1], f"Slope: {slope_grad:.2f}", color='r')
-    plt.yscale('log')
-    plt.legend()
-    plt.show()
+    plot_test(grad_errs, no_grad_errs, 'Tanh W Jacobian Test')
 
 def jacobian_test_X(X, C):
     in_shape = X.shape[0]
@@ -126,20 +118,7 @@ def jacobian_test_X(X, C):
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
     
-    log_no_grad_errs = np.log(no_grad_errs)
-    log_grad_errs = np.log(grad_errs)
-
-    slope_no_grad, _ = np.polyfit(range(n_iter), log_no_grad_errs, 1)
-    slope_grad, _ = np.polyfit(range(n_iter), log_grad_errs, 1)
-
-
-    plt.plot(range(n_iter), no_grad_errs, label='No grad', color='b')
-    plt.plot(range(n_iter), grad_errs, label='Grad', color='r')
-    plt.text(n_iter - 2, no_grad_errs[-1], f"Slope: {slope_no_grad:.2f}", color='b')
-    plt.text(n_iter - 2, grad_errs[-1], f"Slope: {slope_grad:.2f}", color='r')
-    plt.yscale('log')
-    plt.legend()
-    plt.show()
+    plot_test(grad_errs, no_grad_errs, 'Tanh X Jacobian Test')
 
 def grad_test_model(X, C):
     model = NeuralNetwork()
@@ -186,21 +165,77 @@ def grad_test_model(X, C):
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
     
-        log_no_grad_errs = np.log(no_grad_errs)
-    log_grad_errs = np.log(grad_errs)
+    plot_test(grad_errs, no_grad_errs, 'Model Gradient Test')
 
-    slope_no_grad, _ = np.polyfit(range(n_iter), log_no_grad_errs, 1)
-    slope_grad, _ = np.polyfit(range(n_iter), log_grad_errs, 1)
+def resnet_jacobian_test_W1(X, C):
+    in_shape = X.shape[0]
+    out_shape = X.shape[0]
+    d = np.random.randn(in_shape + 1, out_shape)
+    d /= np.linalg.norm(d)
+    n_iter = 10
+    grad_errs = []
+    no_grad_errs = []
+    layer = ResNetLayer(in_shape, out_shape, Tanh())
+    W1: Tensor = layer.W1.view()
+    W2: Tensor = layer.W2.view()
+    for i in range(1, n_iter + 1):
+        eps = 1e-2 * (0.5 ** i)
+
+        # Compute left term
+        layer.W1 += eps * d
+        layer(X)
+        left_A = layer.A.copy()
+
+        # Compute right term
+        layer.W1 -= eps * d
+        layer(X)
+        right_A = layer.A.copy()
+
+        err = left_A - right_A
+        dA = layer.activation.grad(layer.inner_A)
+        diff = eps * W2.T @ ((d.T @ pad(X)) * dA)
+        no_grad_abs_err: float = np.linalg.norm(err)
+        grad_abs_err = np.linalg.norm(err - diff)
+        no_grad_errs.append(no_grad_abs_err)
+        grad_errs.append(grad_abs_err)
+
+    
+    plot_test(grad_errs, no_grad_errs, 'ResNet W1 Jacobian Test')
 
 
-    plt.plot(range(n_iter), no_grad_errs, label='No grad', color='b')
-    plt.plot(range(n_iter), grad_errs, label='Grad', color='r')
-    plt.text(n_iter - 2, no_grad_errs[-1], f"Slope: {slope_no_grad:.2f}", color='b')
-    plt.text(n_iter - 2, grad_errs[-1], f"Slope: {slope_grad:.2f}", color='r')
-    plt.yscale('log')
-    plt.legend()
-    plt.show()
+def resnet_jacobian_test_W2(X, C):
+    in_shape = X.shape[0]
+    out_shape = X.shape[0]
+    d = np.random.randn(out_shape, in_shape)
+    d /= np.linalg.norm(d)
+    n_iter = 10
+    grad_errs = []
+    no_grad_errs = []
+    layer = ResNetLayer(in_shape, out_shape, Tanh())
+    for i in range(1, n_iter + 1):
+        eps = 1e-2 * (0.5 ** i)
 
+        # Compute left term
+        layer.W2 += eps * d
+        layer(X)
+        left_A = layer.A.copy()
+
+        # Compute right term
+        layer.W2 -= eps * d
+        layer(X)
+        right_A = layer.A.copy()
+
+        err = left_A - right_A
+        layer.backward(X, 2 * right_A)
+        diff = eps * (d * layer.W.grad[:-1, :, 1]) @ layer.inner_A
+        # diff = (eps * d * layer.W.grad[:-1, :, 1]) @ layer.inner_A
+        no_grad_abs_err: float = np.linalg.norm(err)
+        grad_abs_err = np.linalg.norm(err - diff)
+        no_grad_errs.append(no_grad_abs_err)
+        grad_errs.append(grad_abs_err)
+
+    
+    plot_test(grad_errs, no_grad_errs, '')
 
 
 
@@ -208,6 +243,7 @@ if __name__ == '__main__':
     Data = loadmat('Data/GMMData.mat')
     X, C = Data['Yt'], Data['Ct']
     os.makedirs('./plots', exist_ok=True)
+    # resnet_jacobian_test_W2(X, C)
     grad_test_model(X, C)
     jacobian_test_W(X, C)
     jacobian_test_X(X, C)

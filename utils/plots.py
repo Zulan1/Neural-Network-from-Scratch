@@ -68,7 +68,7 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
 
         update_graph(epoch_train_loss, epoch_val_loss, optim.lr, optim.t)
 
-        if i > 0.9 * epochs and val_losses[-1] > np.min(val_losses):
+        if i > 0.98 * epochs and val_losses[-1] < np.min(val_losses):
             print(f"Early stopping at epoch {i}")
             break
 

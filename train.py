@@ -73,7 +73,7 @@ def train(model: NeuralNetwork, epochs: int, batch_size: int,
 
         val_losses.append(val_loss)
 
-        if i > 0.9 * epochs and val_losses[-1] > np.min(val_losses[int(0.8 * epochs):]):
+        if i > 0.98 * epochs and val_losses[-1] < np.min(val_losses):
             print(f"Early stopping at epoch {i}")
             break
 

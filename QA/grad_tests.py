@@ -10,6 +10,7 @@ from nn.activations import Tanh, SoftMax
 from nn import NeuralNetwork
 from nn.utils import pad
 from nn.utils.tensor import Tensor
+from utils import nn_builder
 
 
 def plot_test(grad_errs, no_grad_errs, title):
@@ -28,7 +29,7 @@ def plot_test(grad_errs, no_grad_errs, title):
     plt.yscale('log')
     plt.legend()
     plt.title(title)
-    plt.savefig(f'./plots/{title}.png')
+    plt.savefig(f'./figures/{title}.png')
     plt.show()
 
 def gradient_test(X, C):
@@ -120,17 +121,17 @@ def jacobian_test_X(X, C):
     
     plot_test(grad_errs, no_grad_errs, 'Tanh X Jacobian Test')
 
-def grad_test_model(X, C):
-    model = NeuralNetwork()
+def grad_test_model(X, C, resnet=False):
     net_shape = [X.shape[0], 10, 10, C.shape[0]]
-    loss = CrossEntropy()
-    L = len(net_shape) - 1
-    for i in range(L):
-        input_dim, output_dim = net_shape[i], net_shape[i + 1]
-        if i == L - 1:
-            model.add_layer(input_dim, output_dim, 'softmax')
-        else:
-            model.add_layer(input_dim, output_dim, 'tanh')
+
+    model, _, loss = nn_builder(net_shape,
+                                activation='tanh',
+                                resnet=resnet,
+                                loss='crossentropy',
+                                optim='sgd',
+                                lr=1e-2,
+                                momentum=0,
+                                )
     W = np.concatenate([layer.W.ravel() for layer in model.layers])
     d = np.random.randn(*W.shape)
     d /= np.linalg.norm(d)
@@ -165,7 +166,7 @@ def grad_test_model(X, C):
         no_grad_errs.append(no_grad__abs_err)
         grad_errs.append(grad_abs_err)
     
-    plot_test(grad_errs, no_grad_errs, 'Model Gradient Test')
+    plot_test(grad_errs, no_grad_errs, f'Model Gradient Test {"ResNet" if resnet else ""}')
 
 def resnet_jacobian_test_W1(X, C):
     in_shape = X.shape[0]
@@ -206,45 +207,52 @@ def resnet_jacobian_test_W1(X, C):
 def resnet_jacobian_test_W2(X, C):
     in_shape = X.shape[0]
     out_shape = X.shape[0]
-    d = np.random.randn(out_shape, in_shape)
+    d = np.random.randn(out_shape, X.shape[1])
     d /= np.linalg.norm(d)
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
     layer = ResNetLayer(in_shape, out_shape, Tanh())
+
+    # f = resnet = X + W2 @ activation(W1 @ X)
+    # grad(f) = dA/dZ * dZ/dW2 # Z = W2 @ A_inner
+    # f = ||resnet(w + eps * d) - resnet(w)||
+    # df/dW2 = df/A * dA/W2 = 2 * (resnet(w + eps * d) - resnet(w)) * dA/W2
+
+
     for i in range(1, n_iter + 1):
         eps = 1e-2 * (0.5 ** i)
 
         # Compute left term
-        layer.W2 += eps * d
-        layer(X)
-        left_A = layer.A.copy()
+        # layer.W2 += eps * d
+        
+        left_A = layer(X + eps * d)#layer.A.copy()
 
         # Compute right term
-        layer.W2 -= eps * d
-        layer(X)
-        right_A = layer.A.copy()
+        # layer.W2 -= eps * d
+        
+        right_A = layer(X)#layer.A.copy()
 
         err = left_A - right_A
-        layer.backward(X, 2 * right_A)
-        diff = eps * (d * layer.W.grad[:-1, :, 1]) @ layer.inner_A
-        # diff = (eps * d * layer.W.grad[:-1, :, 1]) @ layer.inner_A
+        # layer.backward(X, 2 * err)
+        diff = eps * (d.T @ layer.W2).T
+        # diff = (eps * d * layer.W.grad[:-1, :, 1]) @ layer.inner_A / eps
         no_grad_abs_err: float = np.linalg.norm(err)
         grad_abs_err = np.linalg.norm(err - diff)
         no_grad_errs.append(no_grad_abs_err)
         grad_errs.append(grad_abs_err)
 
     
-    plot_test(grad_errs, no_grad_errs, '')
+    plot_test(grad_errs, no_grad_errs, 'ResNet W2 Jacobian Test')
 
 
 
 if __name__ == '__main__':
     Data = loadmat('Data/GMMData.mat')
     X, C = Data['Yt'], Data['Ct']
-    os.makedirs('./plots', exist_ok=True)
-    resnet_jacobian_test_W2(X, C)
-    # grad_test_model(X, C)
+    os.makedirs('./figures', exist_ok=True)
+    # resnet_jacobian_test_W2(X, C)
+    grad_test_model(X, C, resnet=True)
     # jacobian_test_W(X, C)
     # jacobian_test_X(X, C)
     # gradient_test(X, C)

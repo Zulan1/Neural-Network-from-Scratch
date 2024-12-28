@@ -2,8 +2,8 @@ import numpy as np
 
 from typing import List
 from nn import NeuralNetwork
-from nn.loss import CrossEntropy
-from nn.optimizer import SGD
+from nn.loss import CrossEntropy, Loss
+from nn.optimizer import SGD, Optimizer
 
 def nn_builder(
         net_shape: List[int],
@@ -13,7 +13,7 @@ def nn_builder(
         optim: str,
         lr: float,
         momentum: float
-        ) -> tuple[NeuralNetwork, SGD, CrossEntropy]:
+        ) -> tuple[NeuralNetwork, Optimizer, Loss]:
     # Initialize the model
     if resnet:
         assert len(set(net_shape[1:-1])) == 1, "ResNet layers must have the same number of units in each hidden layer"

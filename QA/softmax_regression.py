@@ -40,7 +40,7 @@ if __name__ == "__main__":
     C_train, C_test = data['Cv'], data['Ct']
     in_shape = X_train.shape[0]
     out_shape = C_train.shape[0]
-    os.makedirs('./plots', exist_ok=True)
+    os.makedirs('./figures', exist_ok=True)
 
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     plt.ylabel('Accuracy')
     plt.legend()
 
-    plt.savefig('./plots/softmax_regression.png')
+    plt.savefig('./figures/softmax_regression.png')
     plt.show()
 
     

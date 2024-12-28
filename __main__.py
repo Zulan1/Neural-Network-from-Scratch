@@ -1,6 +1,5 @@
-import numpy as np
 import click
-import matplotlib.pyplot as plt
+import os
 
 from scipy.io import loadmat
 from typing import List
@@ -48,10 +47,11 @@ def main(dataset: str,
          epochs: int, 
          lr: float, 
          momentum: float):
+
     # Load the data
-    dataset = 'GMM'
     data = loadmat(f"Data/{dataset}Data.mat")
-    save_path = f'figures/datapoints_{dataset}'
+    save_path = f'figures/{dataset}'
+    os.makedirs(save_path, exist_ok=True)
     X_train, C_train = data['Yt'], data['Ct']
     X_train, C_train, X_val, C_val = train_test_split(X_train, C_train, test_size=0.2)
     X_test, C_test = data['Yv'], data['Cv']

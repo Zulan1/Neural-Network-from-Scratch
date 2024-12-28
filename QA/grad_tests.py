@@ -243,8 +243,8 @@ if __name__ == '__main__':
     Data = loadmat('Data/GMMData.mat')
     X, C = Data['Yt'], Data['Ct']
     os.makedirs('./plots', exist_ok=True)
-    # resnet_jacobian_test_W2(X, C)
-    grad_test_model(X, C)
-    jacobian_test_W(X, C)
-    jacobian_test_X(X, C)
-    gradient_test(X, C)
+    resnet_jacobian_test_W2(X, C)
+    # grad_test_model(X, C)
+    # jacobian_test_W(X, C)
+    # jacobian_test_X(X, C)
+    # gradient_test(X, C)

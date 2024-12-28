@@ -88,6 +88,22 @@ class ResNetLayer(Layer): # X + W2 @ activation(W1 @ X)
             pad(grad_W2, axis=0, pad_value=0)],
             axis=2)
         return grad_X
+    
+    @property
+    def W1(self):
+        return self.W[:, :, 0]
+    
+    @property
+    def W2(self):
+        return self.W[:-1, :, 1]
+    
+    @W1.setter
+    def W1(self, value):
+        self.W[:, :, 0] = value
+    
+    @W2.setter
+    def W2(self, value):
+        self.W[:-1, :, 1] = value
 
         
 

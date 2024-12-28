@@ -7,7 +7,7 @@ from nn import NeuralNetwork
 from nn.loss import Loss
 from nn.optimizer import Optimizer
 from train import train_epoch
-from metrics import accuracy
+from metrics import accuracy, f1_score, precision, recall
 
 
 def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
@@ -75,7 +75,7 @@ def plot_train_losses(model: NeuralNetwork, loss_fn: Loss, optim: Optimizer,
     plt.savefig(f'{save_path}_loss_plots.png')
     plt.show()
 
-    acc = accuracy(model(X_train), C_train)
+    _, acc, _, _, _ = evaluate_model(model, X_val, C_val, loss_fn)
 
     print(f"Training complete.\nModel final loss: {train_losses[-1]:.2f}\nValidation final loss: {val_losses[-1]:.2f}\nTraining accuracy: {acc:.2f}")
 
@@ -104,3 +104,21 @@ def plot_model_decision_boundries(model: NeuralNetwork, X: np.ndarray, C: np.nda
     ax[2].scatter(*X, c=np.argmax(C, axis=0), cmap='viridis')
     plt.savefig(f'{save_path}_predictions.png')
     plt.show()
+    
+def evaluate_model(model: NeuralNetwork, X: np.ndarray, C: np.ndarray, loss_fn: Loss):
+    """
+    Evaluate the model on the given data.
+
+    Args:
+        model (NeuralNetwork): The trained neural network model.
+        X (np.ndarray): Input data features.
+        C (np.ndarray): Input data labels.
+    """
+    predictions = model(X)
+    loss = loss_fn(predictions, C)
+    acc = accuracy(predictions, C)
+    f1 = f1_score(predictions, C)
+    prec = precision(predictions, C)
+    rec = recall(predictions, C)
+    print(f"Model loss: {loss:.2f}\nAccuracy: {acc:.2f}\nF1 Score: {f1:.2f}\nPrecision: {prec:.2f}\nRecall: {rec:.2f}")
+    return loss, acc, f1, prec, rec

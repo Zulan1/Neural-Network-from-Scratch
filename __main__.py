@@ -7,7 +7,7 @@ from typing import List
 
 from utils import nn_builder
 from utils import plot_train_losses, plot_model_decision_boundries
-from utils import train_test_split
+from utils import train_test_split, evaluate_model
 
 
 def parse_list(_, __, value):
@@ -49,21 +49,21 @@ def main(dataset: str,
          lr: float, 
          momentum: float):
     # Load the data
-    dataset = 'SwissRollData'
+    dataset = 'GMM'
     data = loadmat(f"Data/{dataset}Data.mat")
-    save_path = f'figures/200_datapoints_{dataset}'
+    save_path = f'figures/datapoints_{dataset}'
     X_train, C_train = data['Yt'], data['Ct']
     X_train, C_train, X_val, C_val = train_test_split(X_train, C_train, test_size=0.2)
     X_test, C_test = data['Yv'], data['Cv']
 
     print(f"{X_train.shape=}, {C_train.shape=}")
     print(f"{X_test.shape=}, {C_test.shape=}")
-    print(f"{net_shape=}")
 
     # Initialize the model
     input_dim = X_train.shape[0]
     output_dim = C_train.shape[0]
     net_shape = [input_dim] + net_shape + [output_dim]
+    print(f"{net_shape=}")
     assert net_shape[0] == input_dim, \
     f"First layer must have the same shape as the input data. Expected {input_dim}, got {net_shape[0]}"
     assert net_shape[-1] == output_dim, \
@@ -87,7 +87,9 @@ def main(dataset: str,
     }
 
     plot_train_losses(**train_args)
-    plot_model_decision_boundries(model, X_test, C_test, save_path)    
+    if dataset != 'GMM':
+        plot_model_decision_boundries(model, X_test, C_test, save_path)
+    evaluate_model(model, X_test, C_test, loss_fn)
 
 
 if __name__ == "__main__":

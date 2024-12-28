@@ -36,5 +36,5 @@ class CrossEntropy(Loss):
         for i in reversed(range(len(model.layers))):
             curr_layer = model.layers[i]
             curr_X = model.layers[i - 1].A if i > 0 else X
-            V = curr_layer.backward(curr_X, curr_layer, V)
-            
+            V = curr_layer.backward(curr_X, V)
+

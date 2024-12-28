@@ -60,8 +60,6 @@ def f1_score(probs: np.ndarray, y_true: np.ndarray) -> float:
     Returns:
         float: The F1 score of the model.
     """
-    y_pred = np.argmax(probs, axis=0)
-    y_true = np.argmax(y_true, axis=0)
-    prec = precision(y_pred, y_true)
-    rec = recall(y_pred, y_true)
+    prec = precision(probs, y_true)
+    rec = recall(probs, y_true)
     return 2 * (prec * rec) / (prec + rec)

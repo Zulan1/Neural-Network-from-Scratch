@@ -5,13 +5,13 @@ from tqdm import tqdm
 from nn.loss import CrossEntropy
 from nn.optimizer import SGD
 from nn import NeuralNetwork
-from utils import nn_builder, plot_train_losses, plot_model_decision_boundries, train_test_split
+from utils import nn_builder, plot_train_losses, plot_model_decision_boundries, train_test_split, evaluate_model
 
 
 if __name__ == "__main__":
     dataset = 'Peaks'
     data = loadmat(f"Data/{dataset}Data.mat")
-    save_path = f'figures/200_datapoints_{dataset}_2nd'
+    save_path = f'figures/200_datapoints_{dataset}'
     X_train, X_test = data['Yv'], data['Yt']
     C_train, C_test = data['Cv'], data['Ct']
     X_train, C_train, X_val, C_val = train_test_split(X_train, C_train, test_size=0.2)
@@ -23,14 +23,14 @@ if __name__ == "__main__":
     print(f"{X_train_200.shape=}, {C_train_200.shape=}")
     print(f"{np.array([C_train_200[0] == 1.]).sum()=}")
 
-    model, optimizer_fn, loss_fn = nn_builder([2,8,8,8,8,5], "relu", True, "crossentropy", "sgd", 0.1, 0.9)
+    model, optimizer_fn, loss_fn = nn_builder([2,15,15,5], "relu", False, "crossentropy", "sgd", 0.1, 0.9)
 
     train_args = {
         'model': model,
         'loss_fn': loss_fn,
         'optim': optimizer_fn,
-        'epochs': 2500,
-        'batch_size': 10,
+        'epochs': 1000,
+        'batch_size': 20,
         'X_train': X_train,
         'C_train': C_train,
         'X_val': X_val,
@@ -39,5 +39,7 @@ if __name__ == "__main__":
     }
 
     plot_train_losses(**train_args)
-    plot_model_decision_boundries(model, X_test, C_test, save_path)    
+    if dataset != 'GMM':
+        plot_model_decision_boundries(model, X_test, C_test, save_path)
+    evaluate_model(model, X_test, C_test, loss_fn)
 

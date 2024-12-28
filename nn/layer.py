@@ -39,7 +39,7 @@ class Layer:
         self.A = self.activation(self.W.T @ pad(X))
         return self.A
 
-    def backward(self, X: np.ndarray, layer, V) -> np.ndarray:
+    def backward(self, X: np.ndarray, V) -> np.ndarray:
         """Backward pass of the layer
         Args:
             X (np.ndarray): input of the layer
@@ -47,9 +47,9 @@ class Layer:
             V (np.ndarray): gradient of the loss function
             activation (Activation): activation function of the layer
         """
-        sigma_deriv = self.activation.grad(layer.A)
+        sigma_deriv = self.activation.grad(self.A)
         grad_W = pad(X) @ (sigma_deriv * V).T
-        grad_X = (layer.W @ (sigma_deriv * V))
+        grad_X = (self.W @ (sigma_deriv * V))
         self.W.grad = grad_W
         return grad_X[:-1, :] # bias removed for next layer
 
@@ -76,11 +76,11 @@ class ResNetLayer(Layer): # X + W2 @ activation(W1 @ X)
         self.A = out
         return out
 
-    def backward(self, X: np.ndarray, layer: Layer, V): # dZ/dW2 = v @ Z_inner.T, dZ/dw1 = X @ (sigma'(W1 @ X) * (W2.T @ v)).T, dZ/X = (V.T + ((V.T @ W.2) * sigma'(W1 @ X).T) @ W1.T).T
+    def backward(self, X: np.ndarray, V): # dZ/dW2 = v @ Z_inner.T, dZ/dw1 = X @ (sigma'(W1 @ X) * (W2.T @ v)).T, dZ/X = (V.T + ((V.T @ W.2) * sigma'(W1 @ X).T) @ W1.T).T
         W1 = self.W[:, :, 0]
         W2 = self.W[:-1, :, 1]
-        sigma_deriv = self.activation.grad(layer.inner_A) # k2 x m
-        grad_W2 = V @ layer.inner_A.T
+        sigma_deriv = self.activation.grad(self.inner_A) # k2 x m
+        grad_W2 = V @ self.inner_A.T
         grad_W1 = pad(X) @ (sigma_deriv * (W2.T @ V)).T # k1 + 1 x k2
         grad_X = (V.T + ((V.T @ W2) * sigma_deriv.T) @ W1[:-1, :].T).T # k1 x m
         self.W.grad = np.stack([

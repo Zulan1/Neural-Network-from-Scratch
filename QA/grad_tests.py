@@ -7,7 +7,6 @@ from scipy.io import loadmat
 from nn.loss import CrossEntropy
 from nn.layer import Layer, ResNetLayer
 from nn.activations import Tanh, SoftMax
-from nn import NeuralNetwork
 from nn.utils import pad
 from nn.utils.tensor import Tensor
 from utils import nn_builder
@@ -171,13 +170,13 @@ def grad_test_model(X, C, resnet=False):
 def resnet_jacobian_test_W1(X, C):
     in_shape = X.shape[0]
     out_shape = X.shape[0]
-    d = np.random.randn(in_shape + 1, out_shape)
+    layer = ResNetLayer(in_shape, out_shape, Tanh())
+    W1: Tensor = layer.W1.view()
+    d = np.random.randn(*W1.shape)
     d /= np.linalg.norm(d)
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
-    layer = ResNetLayer(in_shape, out_shape, Tanh())
-    W1: Tensor = layer.W1.view()
     W2: Tensor = layer.W2.view()
     for i in range(1, n_iter + 1):
         eps = 1e-2 * (0.5 ** i)
@@ -194,7 +193,7 @@ def resnet_jacobian_test_W1(X, C):
 
         err = left_A - right_A
         dA = layer.activation.grad(layer.inner_A)
-        diff = eps * W2.T @ ((d.T @ pad(X)) * dA)
+        diff = eps * W2 @ ((d.T @ pad(X)) * dA)
         no_grad_abs_err: float = np.linalg.norm(err)
         grad_abs_err = np.linalg.norm(err - diff)
         no_grad_errs.append(no_grad_abs_err)
@@ -203,40 +202,32 @@ def resnet_jacobian_test_W1(X, C):
     
     plot_test(grad_errs, no_grad_errs, 'ResNet W1 Jacobian Test')
 
-
 def resnet_jacobian_test_W2(X, C):
     in_shape = X.shape[0]
     out_shape = X.shape[0]
-    d = np.random.randn(out_shape, X.shape[1])
+    layer = ResNetLayer(in_shape, out_shape, Tanh())
+    W2: Tensor = layer.W2.view()
+    d = np.random.randn(*W2.shape)
     d /= np.linalg.norm(d)
     n_iter = 10
     grad_errs = []
     no_grad_errs = []
-    layer = ResNetLayer(in_shape, out_shape, Tanh())
-
-    # f = resnet = X + W2 @ activation(W1 @ X)
-    # grad(f) = dA/dZ * dZ/dW2 # Z = W2 @ A_inner
-    # f = ||resnet(w + eps * d) - resnet(w)||
-    # df/dW2 = df/A * dA/W2 = 2 * (resnet(w + eps * d) - resnet(w)) * dA/W2
-
 
     for i in range(1, n_iter + 1):
         eps = 1e-2 * (0.5 ** i)
 
         # Compute left term
-        # layer.W2 += eps * d
-        
-        left_A = layer(X + eps * d)#layer.A.copy()
+        layer.W2 += eps * d
+        layer(X)
+        left_A = layer.A.copy()
 
         # Compute right term
-        # layer.W2 -= eps * d
-        
-        right_A = layer(X)#layer.A.copy()
+        layer.W2 -= eps * d
+        layer(X)
+        right_A = layer.A.copy()
 
         err = left_A - right_A
-        # layer.backward(X, 2 * err)
-        diff = eps * (d.T @ layer.W2).T
-        # diff = (eps * d * layer.W.grad[:-1, :, 1]) @ layer.inner_A / eps
+        diff = eps * d @ layer.inner_A
         no_grad_abs_err: float = np.linalg.norm(err)
         grad_abs_err = np.linalg.norm(err - diff)
         no_grad_errs.append(no_grad_abs_err)
@@ -245,14 +236,47 @@ def resnet_jacobian_test_W2(X, C):
     
     plot_test(grad_errs, no_grad_errs, 'ResNet W2 Jacobian Test')
 
+def resnet_jacobian_test_X(X, C):
+    in_shape = X.shape[0]
+    out_shape = X.shape[0]
+    layer = ResNetLayer(in_shape, out_shape, Tanh())
+    W1: Tensor = layer.W1.view()
+    W2: Tensor = layer.W2.view()
+    d = np.random.randn(*X.shape)
+    d /= np.linalg.norm(d)
+    n_iter = 10
+    grad_errs = []
+    no_grad_errs = []
+
+    for i in range(1, n_iter + 1):
+        eps = 10 * (0.5 ** i)
+
+        # Compute left term
+        left_A = layer(X + eps * d)
+
+        # Compute right term
+        right_A = layer(X)
+
+        err = left_A - right_A
+        dA = layer.activation.grad(layer.inner_A)
+        diff = eps * (d + W2 @ (dA * (W1[:-1, :].T @ d)))
+        no_grad_abs_err: float = np.linalg.norm(err)
+        grad_abs_err = np.linalg.norm(err - diff)
+        no_grad_errs.append(no_grad_abs_err)
+        grad_errs.append(grad_abs_err)
+
+    
+    plot_test(grad_errs, no_grad_errs, 'ResNet X Jacobian Test')
 
 
 if __name__ == '__main__':
     Data = loadmat('Data/GMMData.mat')
     X, C = Data['Yt'], Data['Ct']
     os.makedirs('./figures', exist_ok=True)
-    # resnet_jacobian_test_W2(X, C)
+    resnet_jacobian_test_X(X, C)
+    resnet_jacobian_test_W1(X, C)
+    resnet_jacobian_test_W2(X, C)
     grad_test_model(X, C, resnet=True)
-    # jacobian_test_W(X, C)
-    # jacobian_test_X(X, C)
-    # gradient_test(X, C)
+    jacobian_test_W(X, C)
+    jacobian_test_X(X, C)
+    gradient_test(X, C)

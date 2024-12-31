@@ -1,89 +1,123 @@
 import numpy as np
-
 from abc import ABC, abstractmethod
-
 
 class Activation(ABC):
 
-    def __init__(self):
-        pass
-
-    def __call__(self, Z: np.ndarray):
-        return self.activation(Z)
-
+    @staticmethod
     @abstractmethod
-    def activation(self, Z: np.ndarray) -> np.ndarray:
+    def activation(Z: np.ndarray) -> np.ndarray:
         """
         Applies an activation function to the input array.
+
         Parameters:
-            A (np.ndarray): The input array to which the activation function will be applied.
+            Z (np.ndarray): The input array to which the activation function will be applied.
+
         Returns:
             np.ndarray: The result of applying the activation function to the input array.
         """
-
         pass
 
+    @staticmethod
     @abstractmethod
-    def grad(self, A: np.ndarray) -> np.ndarray:
+    def grad(A: np.ndarray) -> np.ndarray:
         """
         Compute the gradient of the activation function.
-        
+
+        Parameters:
+            A (np.ndarray): The input array for which the gradient is to be computed.
+
         Returns:
             np.ndarray: Gradient of the activation function.
         """
         pass
 
+    def __call__(self, Z: np.ndarray) -> np.ndarray:
+        return self.activation(Z)
+
 
 class Tanh(Activation):
-    def activation(self, Z: np.ndarray):
+
+    @staticmethod
+    def activation(Z: np.ndarray) -> np.ndarray:
         """
-        Perform the forward pass of the neural network layer.
-        
+        Perform the forward pass using the tanh activation function.
+
+        Parameters:
+            Z (np.ndarray): Input array.
+
         Returns:
-            np.ndarray: Output of the layer after applying the tanh activation function.
+            np.ndarray: Output array after applying the tanh activation function.
         """
         return np.tanh(Z)
 
-    def grad(self, A: np.ndarray):
-        return (1 - A ** 2)
+    @staticmethod
+    def grad(A: np.ndarray) -> np.ndarray:
+        """
+        Compute the gradient of the tanh activation function.
 
+        Parameters:
+            A (np.ndarray): Input array.
+
+        Returns:
+            np.ndarray: Gradient of the tanh activation function.
+        """
+        return 1 - A ** 2
 
 class ReLU(Activation):
-    def activation(self, Z: np.ndarray):
+
+    @staticmethod
+    def activation(Z: np.ndarray) -> np.ndarray:
         """
-        Applies the ReLU (Rectified Linear Unit) activation function to the input array.
-        The ReLU function sets all negative values in the input array to zero.
+        Applies the ReLU activation function to the input array.
+
         Parameters:
-        A (np.ndarray): Input array to which the ReLU activation function will be applied.
+            Z (np.ndarray): Input array.
+
         Returns:
-        np.ndarray: Output array with ReLU activation applied.
+            np.ndarray: Output array after applying ReLU activation.
         """
         A = Z.copy()
         A[A < 0] = 0
         return A
 
-    def grad(self, A: np.ndarray):
+    @staticmethod
+    def grad(A: np.ndarray) -> np.ndarray:
         """
-        Compute the gradient of the activation function.
+        Compute the gradient of the ReLU activation function.
+
         Parameters:
-        A (np.ndarray): The input array for which the gradient is to be computed.
+            A (np.ndarray): Input array.
+
         Returns:
-        np.ndarray: The gradient of the activation function with respect to the input array.
+            np.ndarray: Gradient of the ReLU activation function.
         """
-
-        return np.where(A, 1, 0)
-
+        return np.where(A > 0, 1, 0)
 
 class SoftMax(Activation):
-    def activation(self, Z: np.ndarray):
-        """
-        Perform the forward pass of the neural network layer.
-        
-        Returns:
-            np.ndarray: Output of the layer after applying the softmax activation function.
-        """
-        exps = np.exp(Z - np.max(Z, axis=0))
-        return exps / np.sum(exps, axis=0)
 
-    def grad(self, A: np.ndarray):
-        return np.ones_like(A) # not true, but works for the purposes of softmax here.
+    @staticmethod
+    def activation(Z: np.ndarray) -> np.ndarray:
+        """
+        Applies the softmax activation function to the input array.
+
+        Parameters:
+            Z (np.ndarray): Input array.
+
+        Returns:
+            np.ndarray: Output array after applying softmax activation.
+        """
+        exps = np.exp(Z - np.max(Z, axis=0, keepdims=True))
+        return exps / np.sum(exps, axis=0, keepdims=True)
+
+    @staticmethod
+    def grad(A: np.ndarray) -> np.ndarray:
+        """
+        Placeholder gradient for the softmax activation function.
+
+        Parameters:
+            A (np.ndarray): Input array.
+
+        Returns:
+            np.ndarray: Gradient of the softmax activation function.
+        """
+        return np.ones_like(A)  # Placeholder; softmax gradients depend on the full input array.
